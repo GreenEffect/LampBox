@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>LampBox</title>
-        <link rel="shortcut icon" href="/assets/images/favicon.svg" type="image/svg+xml">
+        <link rel="shortcut icon" href="/assets/images/LampBox_Logo.png" type="image/png">
         <link rel="stylesheet" href="/assets/css/bulma.min.css">
     </head>
     <body>
