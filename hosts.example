@@ -1,0 +1,40 @@
+# Example /etc/hosts entries for Docker LAMP local development
+# 
+# Copy the lines you need to your system's hosts file:
+#   Linux/Mac: /etc/hosts
+#   Windows: C:\Windows\System32\drivers\etc\hosts
+#
+# Usage:
+#   sudo nano /etc/hosts
+#   (paste the lines below)
+#   (save and exit)
+
+# Single project example
+127.0.0.1    myproject.local
+127.0.0.1    www.myproject.local
+
+# Multiple projects example
+127.0.0.1    project1.local
+127.0.0.1    www.project1.local
+
+127.0.0.1    project2.local
+127.0.0.1    www.project2.local
+
+127.0.0.1    project3.local
+127.0.0.1    www.project3.local
+
+# E-commerce project example
+127.0.0.1    myshop.local
+127.0.0.1    www.myshop.local
+127.0.0.1    admin.myshop.local
+127.0.0.1    api.myshop.local
+
+# WordPress multisite example
+127.0.0.1    myblog.local
+127.0.0.1    blog1.myblog.local
+127.0.0.1    blog2.myblog.local
+
+# Note: After modifying /etc/hosts, you may need to flush DNS cache:
+#   Linux: sudo systemd-resolve --flush-caches
+#   Mac: sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+#   Windows: ipconfig /flushdns

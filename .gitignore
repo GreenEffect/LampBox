@@ -1,0 +1,62 @@
+# Environment
+.env
+.env.local
+.env.*.local
+.env.test.*
+
+# Data directories
+data/mysql/*
+!data/mysql/.gitkeep
+logs/*
+!logs/.gitkeep
+!logs/apache2/.gitkeep
+!logs/mysql/.gitkeep
+!logs/nginx/.gitkeep
+
+# SSL Certificates (generated)
+config/ssl/*.pem
+config/ssl/*.crt
+config/ssl/*.key
+config/nginx/ssl/*.pem
+config/nginx/ssl/*.crt
+config/nginx/ssl/*.key
+
+# Backups
+*.sql
+*.sql.gz
+backup_*.sql
+
+# IDE
+.vscode/*
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+*.cache
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+
+# Composer vendor (if needed)
+vendor/
+
+# Build artifacts
+buildtest/
+*.tar.gz
+*.zip
+
+# Documentation temp files
+*.md~
+*.txt~
