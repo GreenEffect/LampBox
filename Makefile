@@ -41,13 +41,13 @@ start: ## Start the stack (direct port mode)
 
 start-proxy: ssl ## Start the stack with reverse proxy (domain mode)
 	@echo "$(GREEN)Starting LampBox with reverse proxy...$(NC)"
-	@docker compose --profile proxy up -d
+	@docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy up -d
 	@echo "$(GREEN)✓ Stack started with reverse proxy$(NC)"
 	@echo "$(BLUE)Access your site at: https://$(PROJECT_DOMAIN)$(NC)"
 
 stop: ## Stop the stack
 	@echo "$(YELLOW)Stopping LampBox...$(NC)"
-	@docker compose --profile proxy down
+	@docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy down
 	@echo "$(GREEN)✓ Stack stopped$(NC)"
 
 restart: stop start ## Restart the stack
@@ -73,7 +73,7 @@ mysql: ## Open MySQL shell
 
 rebuild: ## Rebuild all containers from scratch
 	@echo "$(YELLOW)Rebuilding LampBox...$(NC)"
-	@docker compose --profile proxy down
+	@docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy down
 	@docker compose build --no-cache
 	@echo "$(GREEN)✓ Rebuild complete$(NC)"
 	@make start
@@ -83,11 +83,7 @@ clean: ## Remove all containers, networks, and volumes (⚠️  destructive!)
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker compose --profile proxy down -v; \
-		echo "$(GREEN)✓ All containers, networks, and volumes removed$(NC)"; \
-	else \
-		echo "$(YELLOW)Clean cancelled$(NC)"; \
-	fi
+			docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy down -v; \
 
 ##@ SSL
 

@@ -76,21 +76,29 @@ fi
 
 # Generate self-signed certificate
 print_info "Generating self-signed certificate..."
-
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+rm -f "$CERT_FILE" "$KEY_FILE"
+MSYS_NO_PATHCONV=1 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout "$KEY_FILE" \
     -out "$CERT_FILE" \
     -subj "/C=FR/ST=State/L=City/O=Organization/CN=$DOMAIN" \
-    -addext "subjectAltName=DNS:$DOMAIN,DNS:*.$DOMAIN,DNS:localhost,IP:127.0.0.1" \
-    2>/dev/null
+    -addext "subjectAltName=DNS:$DOMAIN,DNS:*.$DOMAIN,DNS:localhost,IP:127.0.0.1"
+
+# Validate certificate and key match
+CERT_MODULUS=$(openssl x509 -noout -modulus -in "$CERT_FILE" | openssl md5)
+KEY_MODULUS=$(openssl rsa -noout -modulus -in "$KEY_FILE" | openssl md5)
+if [ "$CERT_MODULUS" != "$KEY_MODULUS" ]; then
+    print_error "The generated certificate and key do not match."
+    rm -f "$CERT_FILE" "$KEY_FILE"
+    exit 1
+fi
 
 # Set proper permissions
 chmod 644 "$CERT_FILE"
 chmod 600 "$KEY_FILE"
 
 # Copy certificates to Apache SSL directory for direct HTTPS access
-cp "$CERT_FILE" "$APACHE_SSL_DIR/"
-cp "$KEY_FILE" "$APACHE_SSL_DIR/"
+cp -f "$CERT_FILE" "$APACHE_SSL_DIR/"
+cp -f "$KEY_FILE" "$APACHE_SSL_DIR/"
 
 print_info "✓ SSL certificates generated successfully!"
 echo ""
