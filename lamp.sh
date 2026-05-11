@@ -31,6 +31,70 @@ check_env() {
     source .env
 }
 
+compose_files() {
+    local args=(docker compose -f docker-compose.yml)
+
+    if [ "$USE_REVERSE_PROXY" = "true" ]; then
+        args+=( -f docker-compose.proxy.yml )
+    fi
+
+    if [ -z "$MYSQL_PORT" ]; then
+        args+=( -f docker-compose.no-mysql-port.yml )
+    fi
+
+    if [ "$USE_REVERSE_PROXY" = "true" ]; then
+        args+=( --profile proxy )
+    fi
+
+    echo "${args[@]}"
+}
+
+mysql_data_exists() {
+    if [ ! -d "data/mysql" ]; then
+        return 1
+    fi
+
+    shopt -s nullglob 2>/dev/null
+    local files=(data/mysql/*)
+    shopt -u nullglob
+
+    for file in "${files[@]}"; do
+        case "$(basename "$file")" in
+            .gitkeep|.db_version)
+                continue
+                ;;
+            *)
+                return 0
+                ;;
+        esac
+    done
+
+    return 1
+}
+
+check_mysql_data() {
+    if mysql_data_exists; then
+        if [ -f "data/mysql/.db_version" ]; then
+            local existing_version
+            existing_version=$(cat data/mysql/.db_version)
+            if [ "$existing_version" != "$DATABASE" ]; then
+                print_error "Existing MySQL data was created for '$existing_version' but current DATABASE is '$DATABASE'."
+                print_error "Run './lamp.sh clean-db' before switching database engines."
+                exit 1
+            fi
+        else
+            print_warning "Existing MySQL data directory contains files and no version marker."
+            print_warning "This may cause startup failures if the data folder is incompatible with '$DATABASE'."
+            read -p "Continue anyway? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_info "Aborting startup. Use './lamp.sh clean-db' to reset the database data."
+                exit 1
+            fi
+        fi
+    fi
+}
+
 # Show usage
 usage() {
     cat << EOF
@@ -70,6 +134,7 @@ EOF
 # Start the stack
 start() {
     check_env
+    check_mysql_data
     print_header "Starting LampBox: $COMPOSE_PROJECT_NAME"
     
     if [ "$1" = "--proxy" ] || [ "$1" = "-p" ] || [ "$USE_REVERSE_PROXY" = "true" ]; then
@@ -82,12 +147,14 @@ start() {
             ./generate-ssl-certs.sh
         fi
         
-        docker compose --profile proxy up -d
+        local COMPOSE_CMD=($(compose_files))
+        "${COMPOSE_CMD[@]}" up -d
         print_info "✓ Stack started with reverse proxy"
         print_info "Access your site at: https://$PROJECT_DOMAIN"
     else
         print_info "Starting in direct port mode..."
-        docker compose up -d
+        local COMPOSE_CMD=($(compose_files))
+        "${COMPOSE_CMD[@]}" up -d
         print_info "✓ Stack started"
         print_info "Access your site at: http://localhost:$HTTP_PORT"
     fi
@@ -100,7 +167,8 @@ start() {
 stop() {
     check_env
     print_header "Stopping LampBox: $COMPOSE_PROJECT_NAME"
-    docker compose --profile proxy down
+    local COMPOSE_CMD=($(compose_files))
+    "${COMPOSE_CMD[@]}" down
     print_info "✓ Stack stopped"
 }
 
@@ -163,7 +231,8 @@ rebuild() {
     read -p "Continue? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker compose --profile proxy down
+        local COMPOSE_CMD=($(compose_files))
+        "${COMPOSE_CMD[@]}" down
         docker compose build --no-cache
         print_info "✓ Rebuild complete"
         echo ""
@@ -182,7 +251,8 @@ clean() {
     read -p "Are you sure? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker compose --profile proxy down -v
+        local COMPOSE_CMD=($(compose_files))
+        "${COMPOSE_CMD[@]}" down -v
         print_info "✓ All containers, networks, and volumes removed"
         
         read -p "Also remove MySQL data directory? (y/N): " -n 1 -r
