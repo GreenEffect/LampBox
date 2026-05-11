@@ -2,7 +2,7 @@
   <img src="docs/LampBox_Logo.png" alt="LampBox Logo" width="200">
 </div>
 
-# 🐳 LampBox v2.0.2
+# 🐳 LampBox v2.1.0
 
 Modern, cross-platform LAMP development environment with Docker.
 
@@ -160,7 +160,7 @@ PROJECT_DOMAIN=myproject.local
 ./generate-ssl-certs.sh
 
 # 4. Start with proxy profile
-docker compose --profile proxy up -d
+docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy up -d
 ```
 
 **Pros:** Clean URLs, HTTPS by default, professional  
@@ -352,7 +352,15 @@ For production:
 - Review and harden all configurations
 - Use environment-specific configs
 
-## 🆚 What's New in v2.0.2
+## 🆚 What's New in v2.1.0
+
+### Version 2.1.0 (2026-05-11)
+- ✅ Fixed reverse proxy domain substitution and phpMyAdmin redirect handling
+- ✅ Fixed SSL certificate generation under Git Bash/Windows (MSYS path conversion)
+- ✅ Updated Nginx config to use modern HTTP/2 syntax
+- ✅ Added compose overrides for proxy mode and optional MySQL port handling
+- ✅ Added version-specific MySQL/MariaDB data directories and compatibility checks
+- ✅ Updated documentation to reflect new reverse proxy startup flow
 
 ### Version 2.0.2 (2026-01-20)
 - ✅ Added PHP 8.5 support
