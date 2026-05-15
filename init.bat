@@ -58,6 +58,17 @@ if not exist sample.env (
 
 REM Copy sample.env to .env
 copy sample.env .env >nul
+
+echo [INFO] Generating phpMyAdmin Blowfish secret...
+where powershell >nul 2>nul
+if %errorlevel% == 0 (
+    for /f "delims=" %%S in ('powershell -NoProfile -Command "$s = [System.Guid]::NewGuid().ToString('N'); if ($s.Length -lt 32) { $s = $s.PadRight(32,'0') }; Write-Output $s"') do set "BLOWFISH_SECRET=%%S"
+    powershell -NoProfile -Command "(Get-Content .env) -replace 'PHPMYADMIN_BLOWFISH_SECRET=.*', 'PHPMYADMIN_BLOWFISH_SECRET=%BLOWFISH_SECRET%' | Set-Content .env"
+    echo [INFO] phpMyAdmin Blowfish secret generated
+) else (
+    echo [WARNING] PowerShell not found, phpMyAdmin secret was not generated
+)
+
 echo [INFO] .env file created
 echo [INFO] On Windows, Docker Desktop handles file permissions automatically
 echo.

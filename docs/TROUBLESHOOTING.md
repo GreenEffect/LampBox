@@ -1,6 +1,6 @@
 # 🔧 Troubleshooting Guide
 
-Common issues and solutions for LampBox v2.0.2.
+Common issues and solutions for LampBox v2.1.0.
 
 ## 📑 Table of Contents
 
@@ -25,6 +25,8 @@ Common issues and solutions for LampBox v2.0.2.
 ```
 
 **Cause:** The `data/mysql/` directory contains residual files preventing MySQL initialization.
+
+**Note:** If you see InnoDB errors such as `Tablespace flags are invalid`, `Corrupted page`, or `Data Dictionary initialization failed`, the local data directory is likely incompatible or corrupted. In that case, `./lamp.sh clean-db` is required before restarting.
 
 **Solution 1: Quick Fix (Recommended)**
 ```bash

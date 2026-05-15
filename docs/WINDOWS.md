@@ -1,8 +1,8 @@
-# Windows Setup Guide - LampBox v2.0.2
+# Windows Setup Guide - LampBox v2.1.0
 
 ## 🪟 Guide Spécifique Windows
 
-Ce guide vous aide à configurer et utiliser LampBox v2.0.2 sur Windows.
+Ce guide vous aide à configurer et utiliser LampBox v2.1.0 sur Windows.
 
 ---
 

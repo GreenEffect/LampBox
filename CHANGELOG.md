@@ -1,5 +1,13 @@
 # Changelog - LampBox
 
+### 2.1.0 - 2026-05-11
+✅ Fixed reverse proxy domain substitution and phpMyAdmin redirect handling  
+✅ Fixed SSL certificate generation under Git Bash/Windows (MSYS path conversion)  
+✅ Updated Nginx config to use modern HTTP/2 syntax  
+✅ Added compose overrides for proxy mode and optional MySQL port handling  
+✅ Added version-specific MySQL/MariaDB data directories and compatibility checks  
+✅ Updated documentation to reflect new reverse proxy startup flow
+
 ### 2.0.2 - 2026-01-20
 ✅ Add PHP 8.5 support  
 ✅ Add MySQL 8.4 support  

@@ -275,7 +275,7 @@ show_next_steps() {
         fi
         echo ""
         echo "4. Start your stack with reverse proxy:"
-        echo -e "   ${YELLOW}docker compose --profile proxy up -d${NC}"
+        echo -e "   ${YELLOW}docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy up -d${NC}"
         echo ""
         echo "5. Access your site:"
         echo -e "   ${YELLOW}https://$PROJECT_DOMAIN${NC}"
