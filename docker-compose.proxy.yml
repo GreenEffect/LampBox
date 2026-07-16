@@ -1,3 +1,35 @@
+# ==============================================================================
+# LampBox - Reverse proxy override (Traefik)
+# ==============================================================================
+# Applied when USE_REVERSE_PROXY=true. It:
+#   - removes the host port bindings from the webserver (Traefik owns 80/443)
+#   - attaches the webserver to the shared external network 'lampbox_web'
+#   - declares Traefik labels so the shared Traefik instance routes
+#     https://${PROJECT_DOMAIN} to this project's Apache container.
+#
+# The shared Traefik stack must be running first: ./lamp.sh proxy-up
+# ==============================================================================
+
 services:
   webserver:
-    ports: []
+    # Traefik owns the host ports; the project no longer publishes any.
+    # '!reset []' truly clears the base 'ports' list (a plain '[]' would be
+    # concatenated/ignored by Compose's merge and leave the ports in place).
+    ports: !reset []
+    networks:
+      - internal
+      - lampbox_web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=lampbox_web"
+      # HTTPS router for this project's domain
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${PROJECT_DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true"
+      # Apache listens on port 80 inside the container
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80"
+
+networks:
+  lampbox_web:
+    external: true
+    name: lampbox_web
