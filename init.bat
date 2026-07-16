@@ -84,10 +84,9 @@ if not exist www mkdir www
 if not exist data\mysql mkdir data\mysql
 if not exist logs\apache2 mkdir logs\apache2
 if not exist logs\mysql mkdir logs\mysql
-if not exist logs\nginx mkdir logs\nginx
 if not exist config\ssl mkdir config\ssl
-if not exist config\nginx\ssl mkdir config\nginx\ssl
 if not exist config\initdb mkdir config\initdb
+if not exist traefik\certs mkdir traefik\certs
 
 echo [INFO] All directories created
 echo.
@@ -129,6 +128,11 @@ echo    http://localhost:%HTTP%
 echo.
 echo 4. Access phpMyAdmin:
 echo    http://localhost:%HTTP%/%PROJECT_NAME%-mysql
+echo.
+echo [INFO] Reverse proxy mode (multiple projects via Traefik):
+echo   - Set USE_REVERSE_PROXY=true and a unique PROJECT_DOMAIN in .env
+echo   - Add PROJECT_DOMAIN to C:\Windows\System32\drivers\etc\hosts (127.0.0.1)
+echo   - Managed via lamp.sh in Git Bash:  ./lamp.sh proxy-up  then  ./lamp.sh start
 echo.
 echo [INFO] Windows Notes:
 echo   - Docker Desktop must be running

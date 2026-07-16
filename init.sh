@@ -162,10 +162,9 @@ create_directories() {
         "data/mysql"
         "logs/apache2"
         "logs/mysql"
-        "logs/nginx"
         "config/ssl"
-        "config/nginx/ssl"
         "config/initdb"
+        "traefik/certs"
     )
     
     for dir in "${dirs[@]}"; do
@@ -267,15 +266,12 @@ show_next_steps() {
             echo -e "   Command: ${YELLOW}echo '127.0.0.1    $PROJECT_DOMAIN' | sudo tee -a /etc/hosts${NC}"
         fi
         echo ""
-        echo "3. Generate SSL certificates:"
-        if [ "$OS" = "Windows" ]; then
-            echo -e "   ${YELLOW}bash generate-ssl-certs.sh${NC} (in Git Bash)"
-        else
-            echo -e "   ${YELLOW}./generate-ssl-certs.sh${NC}"
-        fi
+        echo "3. Start the shared Traefik reverse proxy (once for all projects):"
+        echo -e "   ${YELLOW}./lamp.sh proxy-up${NC}"
+        echo "   (creates the shared network and TLS certificate automatically)"
         echo ""
-        echo "4. Start your stack with reverse proxy:"
-        echo -e "   ${YELLOW}docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy up -d${NC}"
+        echo "4. Start your project behind Traefik:"
+        echo -e "   ${YELLOW}./lamp.sh start${NC}"
         echo ""
         echo "5. Access your site:"
         echo -e "   ${YELLOW}https://$PROJECT_DOMAIN${NC}"

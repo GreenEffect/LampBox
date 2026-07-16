@@ -1,7 +1,7 @@
 # Makefile for LampBox
 # Alternative to lamp.sh for those who prefer make commands
 
-.PHONY: help init check start stop restart status logs shell mysql rebuild clean ssl info start-proxy
+.PHONY: help init check start stop restart status logs shell mysql rebuild clean ssl info start-proxy proxy-up proxy-down
 
 # Load environment variables
 include .env
@@ -35,19 +35,25 @@ check: ## Check system requirements
 
 start: ## Start the stack (direct port mode)
 	@echo "$(GREEN)Starting LampBox...$(NC)"
-	@docker compose up -d
-	@echo "$(GREEN)✓ Stack started$(NC)"
+	@./lamp.sh start
 	@echo "$(BLUE)Access your site at: http://localhost:$(HTTP_PORT)$(NC)"
 
-start-proxy: ssl ## Start the stack with reverse proxy (domain mode)
-	@echo "$(GREEN)Starting LampBox with reverse proxy...$(NC)"
-	@docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy up -d
-	@echo "$(GREEN)✓ Stack started with reverse proxy$(NC)"
+start-proxy: ## Start the stack behind the shared Traefik reverse proxy (domain mode)
+	@echo "$(GREEN)Starting LampBox behind Traefik...$(NC)"
+	@./lamp.sh start --proxy
 	@echo "$(BLUE)Access your site at: https://$(PROJECT_DOMAIN)$(NC)"
+
+proxy-up: ## Start the shared Traefik reverse proxy (owns ports 80/443)
+	@echo "$(GREEN)Starting shared Traefik reverse proxy...$(NC)"
+	@./lamp.sh proxy-up
+
+proxy-down: ## Stop the shared Traefik reverse proxy
+	@echo "$(YELLOW)Stopping shared Traefik reverse proxy...$(NC)"
+	@./lamp.sh proxy-down
 
 stop: ## Stop the stack
 	@echo "$(YELLOW)Stopping LampBox...$(NC)"
-	@docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy down
+	@docker compose -f docker-compose.yml down
 	@echo "$(GREEN)✓ Stack stopped$(NC)"
 
 restart: stop start ## Restart the stack
@@ -73,7 +79,7 @@ mysql: ## Open MySQL shell
 
 rebuild: ## Rebuild all containers from scratch
 	@echo "$(YELLOW)Rebuilding LampBox...$(NC)"
-	@docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy down
+	@docker compose -f docker-compose.yml down
 	@docker compose build --no-cache
 	@echo "$(GREEN)✓ Rebuild complete$(NC)"
 	@make start
@@ -83,13 +89,17 @@ clean: ## Remove all containers, networks, and volumes (⚠️  destructive!)
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-			docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy down -v; \
+		docker compose -f docker-compose.yml down -v; \
+		echo "$(GREEN)✓ Cleaned$(NC)"; \
+	else \
+		echo "$(YELLOW)Clean cancelled$(NC)"; \
+	fi
 
 ##@ SSL
 
-ssl: ## Generate SSL certificates
-	@echo "$(GREEN)Generating SSL certificates...$(NC)"
-	@./generate-ssl-certs.sh
+ssl: ## Generate the shared Traefik TLS certificate (*.local)
+	@echo "$(GREEN)Generating shared Traefik TLS certificate...$(NC)"
+	@./traefik/generate-certs.sh
 
 ##@ Information
 
