@@ -41,9 +41,10 @@ services:
       context: "./bin/${DATABASE}"
     container_name: "${COMPOSE_PROJECT_NAME}-database"
     restart: unless-stopped
-    ports:
-      # Only expose MySQL port if MYSQL_PORT is set
-      - "${MYSQL_PORT:-3306}:3306"
+    # No host port by default, so several projects can run in parallel.
+    # Set MYSQL_PORT in .env to publish one (docker-compose.mysql-port.yml
+    # is then applied by lamp.sh). Containers always reach the database at
+    # ${COMPOSE_PROJECT_NAME}-database:3306.
     volumes:
       - ${MYSQL_INITDB_DIR:-./config/initdb}:/docker-entrypoint-initdb.d
       - ${MYSQL_DATA_DIR:-./data/mysql-${DATABASE}}:/var/lib/mysql

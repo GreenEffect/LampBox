@@ -38,8 +38,9 @@ compose_files() {
         args+=( -f docker-compose.proxy.yml )
     fi
 
-    if [ -z "$MYSQL_PORT" ]; then
-        args+=( -f docker-compose.no-mysql-port.yml )
+    # The database has no host port by default; publish one only if requested
+    if [ -n "$MYSQL_PORT" ]; then
+        args+=( -f docker-compose.mysql-port.yml )
     fi
 
     echo "${args[@]}"
