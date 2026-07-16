@@ -51,6 +51,9 @@ docker compose up -d
 # Start the stack
 ./lamp.sh start
 
+# Start the shared Traefik proxy (once, for domain access)
+./lamp.sh proxy-up
+
 # Start with reverse proxy (domain access)
 ./lamp.sh start --proxy
 
@@ -81,11 +84,15 @@ docker compose up -d
 - Website: http://localhost:8080
 - phpMyAdmin: http://localhost:8080/lamp-mysql
 
-### Method 2: Domain Access (Reverse Proxy)
+### Method 2: Domain Access (Traefik reverse proxy)
+
+A single shared Traefik instance owns ports 80/443 and routes every project by
+its domain, so multiple projects run in parallel without port conflicts.
+
 1. Edit `.env`:
    ```bash
    USE_REVERSE_PROXY=true
-   PROJECT_DOMAIN=myproject.local
+   PROJECT_DOMAIN=myproject.local   # unique per project
    ```
 
 2. Add to `/etc/hosts`:
@@ -93,14 +100,14 @@ docker compose up -d
    echo "127.0.0.1 myproject.local" | sudo tee -a /etc/hosts
    ```
 
-3. Generate SSL certificates:
+3. Start the shared Traefik proxy (once — creates the network + TLS cert):
    ```bash
-   ./generate-ssl-certs.sh
+   ./lamp.sh proxy-up
    ```
 
-4. Start with proxy:
+4. Start your project behind Traefik:
    ```bash
-   ./lamp.sh start --proxy
+   ./lamp.sh start        # (start also runs proxy-up automatically if needed)
    ```
 
 5. Access: https://myproject.local
@@ -109,7 +116,9 @@ docker compose up -d
 
 ## 🔧 Multiple Projects
 
-### Setup Project 1
+### Option A — Direct ports (unique port per project)
+
+**Setup Project 1**
 ```bash
 cd ~/projects/project1
 git clone https://github.com/GreenEffect/LampBox.git .
@@ -118,13 +127,28 @@ git clone https://github.com/GreenEffect/LampBox.git .
 ./lamp.sh start
 ```
 
-### Setup Project 2
+**Setup Project 2**
 ```bash
 cd ~/projects/project2
 git clone https://github.com/GreenEffect/LampBox.git .
 ./init.sh
 # Edit .env: HTTP_PORT=8081, COMPOSE_PROJECT_NAME=project2
 ./lamp.sh start
+```
+
+### Option B — Domains via shared Traefik (recommended)
+
+No port juggling: give each project a unique domain and let Traefik route them.
+
+```bash
+# One-time: start the shared proxy
+./lamp.sh proxy-up
+
+# Project 1 — .env: USE_REVERSE_PROXY=true, PROJECT_DOMAIN=project1.local, COMPOSE_PROJECT_NAME=project1
+cd ~/projects/project1 && ./lamp.sh start     # → https://project1.local
+
+# Project 2 — .env: USE_REVERSE_PROXY=true, PROJECT_DOMAIN=project2.local, COMPOSE_PROJECT_NAME=project2
+cd ~/projects/project2 && ./lamp.sh start     # → https://project2.local
 ```
 
 Both projects now run simultaneously! 🎊
@@ -147,9 +171,13 @@ DATABASE=mysql8   # Options: mysql8, mysql84, mariadb103-106, mariadb1011, maria
 
 ### Change Ports
 ```bash
-# In .env
+# In .env (HTTP/HTTPS ports only apply in direct port mode)
 HTTP_PORT=8080
 HTTPS_PORT=8443
+
+# Database port on the host: empty by default (nothing published), which lets
+# several projects coexist. Set a UNIQUE value per project only if you need a
+# GUI client such as TablePlus or DBeaver.
 MYSQL_PORT=3306
 ```
 

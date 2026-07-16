@@ -86,7 +86,7 @@ MYSQL_PASSWORD=secret
 
 **Start:**
 ```bash
-./generate-ssl-certs.sh
+./lamp.sh proxy-up      # shared Traefik (creates network + TLS cert)
 ./lamp.sh start --proxy
 ```
 

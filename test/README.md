@@ -351,4 +351,4 @@ Si vous rencontrez des problèmes :
 
 ---
 
-**Version :** 2.1.0 (2026-05-11)
+**Version :** 2.2.0 (2026-07-15)

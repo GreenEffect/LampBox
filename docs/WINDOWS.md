@@ -1,8 +1,8 @@
-# Windows Setup Guide - LampBox v2.1.0
+# Windows Setup Guide - LampBox v2.2.0
 
 ## 🪟 Guide Spécifique Windows
 
-Ce guide vous aide à configurer et utiliser LampBox v2.1.0 sur Windows.
+Ce guide vous aide à configurer et utiliser LampBox v2.2.0 sur Windows.
 
 ---
 
@@ -191,18 +191,17 @@ ipconfig /flushdns
 
 ## 🔒 SSL/HTTPS (Windows)
 
+En mode reverse proxy, le certificat TLS est **partagé** par tous les projets et
+utilisé par Traefik. Il est stocké dans `traefik/certs/`.
+
 ### Avec Git Bash
 
 ```bash
-# Générer certificats SSL
-bash generate-ssl-certs.sh
-
-# Ou avec OpenSSL directement
-cd config/nginx/ssl
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout cert-key.pem -out cert.pem \
-  -subj "/C=FR/ST=State/L=City/O=Organization/CN=monprojet.local"
+# Générer le certificat partagé *.local (ou : ./lamp.sh ssl)
+bash traefik/generate-certs.sh
 ```
+
+`./lamp.sh proxy-up` le génère aussi automatiquement s'il est absent.
 
 ### Certificats de Confiance (mkcert)
 
@@ -215,18 +214,13 @@ REM Ou télécharger depuis:
 REM https://github.com/FiloSottile/mkcert/releases
 ```
 
-**Utilisation:**
+**Utilisation (certificat partagé pour tous les domaines *.local):**
 ```batch
 REM Installer le CA local
 mkcert -install
 
-REM Générer certificats
-cd config\nginx\ssl
-mkcert monprojet.local localhost 127.0.0.1
-
-REM Renommer les fichiers
-ren monprojet.local+2.pem cert.pem
-ren monprojet.local+2-key.pem cert-key.pem
+REM Générer le certificat partagé dans traefik/certs
+mkcert -cert-file traefik\certs\cert.pem -key-file traefik\certs\cert-key.pem *.local localhost 127.0.0.1
 ```
 
 ---
