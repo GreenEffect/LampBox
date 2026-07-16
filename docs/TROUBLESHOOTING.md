@@ -1,6 +1,6 @@
 # 🔧 Troubleshooting Guide
 
-Common issues and solutions for LampBox v2.1.0.
+Common issues and solutions for LampBox v2.2.0.
 
 ## 📑 Table of Contents
 
@@ -116,9 +116,17 @@ docker compose ps database
 ```
 
 **From External Client:**
+
+`MYSQL_PORT` is **empty by default**, so the database is not published on the
+host and external clients cannot connect. Set a **unique** port per project
+(3306, 3307, ...) and restart the stack:
+
 ```bash
-# Ensure MYSQL_PORT is set in .env
+# In .env
 MYSQL_PORT=3306
+
+# Restart so the port is published
+./lamp.sh restart
 
 # Test connection
 mysql -h 127.0.0.1 -P 3306 -u docker -p
@@ -355,7 +363,69 @@ HTTPS_PORT=8444
 MYSQL_PORT=3307
 ```
 
-Or use reverse proxy mode with different domains.
+Or, better, use reverse proxy mode with different domains (see below).
+
+### "port is already allocated" when starting a 2nd project in proxy mode
+
+**Error:**
+```
+Error response from daemon: driver failed programming external connectivity
+on endpoint <project>-nginx (...): Bind for 0.0.0.0:80 failed: port is already allocated
+```
+
+**Cause (legacy versions ≤ 2.1.0):** each project used to start its *own* nginx
+container that hard-bound host ports 80/443. Only one container can own those
+ports, so the second project failed — and per-project `HTTP_PORT` changes did
+**not** help, because in proxy mode those ports applied only to Apache, not nginx.
+
+**Fix:** LampBox now uses a **single shared Traefik** proxy that owns 80/443 for
+every project. Update your checkout, then:
+
+```bash
+# Start the shared proxy once
+./lamp.sh proxy-up
+
+# Give each project a UNIQUE domain and name in its .env:
+#   USE_REVERSE_PROXY=true
+#   PROJECT_DOMAIN=project1.local      (project2.local, ...)
+#   COMPOSE_PROJECT_NAME=project1      (project2, ...)
+
+# Then start each project — no port conflict:
+cd project1 && ./lamp.sh start
+cd project2 && ./lamp.sh start
+```
+
+In proxy mode `HTTP_PORT`/`HTTPS_PORT` are ignored: Traefik routes by domain.
+
+### 2nd project won't start / Traefik returns 404 — the MySQL port
+
+Traefik routes only **running** containers. If your 2nd project's containers
+never started, `https://project2.local` returns a Traefik **404** (the request
+reached Traefik, but no router matched).
+
+A frequent cause: **`MYSQL_PORT` is NOT covered by the reverse proxy** — it is
+published on the host in both modes. Two projects both using the default `3306`
+conflict, the database fails to start, and since `webserver` has
+`depends_on: database`, nothing comes up.
+
+**Check whether the project actually started:**
+```bash
+docker ps -a --format '{{.Names}}\t{{.Status}}' | grep project2
+docker ps --format '{{.Names}} {{.Ports}}' | grep 3306   # who owns 3306?
+```
+
+**Fix — leave `MYSQL_PORT` empty (the default since v2.2.0):**
+```bash
+# In each project's .env
+MYSQL_PORT=
+```
+
+Nothing is published on the host, so projects never collide. Your app still
+reaches its own database internally at `${COMPOSE_PROJECT_NAME}-database:3306`,
+and phpMyAdmin keeps working.
+
+If you *do* need a host port for a GUI client, give each project a **unique**
+value instead (`3306`, `3307`, `3308`, ...).
 
 ---
 
@@ -510,6 +580,25 @@ sudo killall -HUP mDNSResponder
 ```cmd
 ipconfig /flushdns
 ```
+
+**Check the shared Traefik proxy is running:**
+```bash
+# The shared proxy container must be up (it owns ports 80/443)
+docker ps --filter name=lampbox-traefik
+
+# If missing, start it:
+./lamp.sh proxy-up
+
+# The shared network must exist:
+docker network inspect lampbox_web >/dev/null && echo "network OK"
+
+# Check Traefik discovered your project (look for your router/rule):
+docker logs lampbox-traefik | grep -i "$(grep PROJECT_DOMAIN .env | cut -d= -f2)"
+```
+
+**Browser shows a certificate warning:** expected with the self-signed
+`*.local` certificate. Accept it, or generate a trusted one with
+[mkcert](https://github.com/FiloSottile/mkcert) into `traefik/certs/`.
 
 ---
 

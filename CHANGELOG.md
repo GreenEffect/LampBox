@@ -1,5 +1,18 @@
 # Changelog - LampBox
 
+### 2.2.0 - 2026-07-15
+✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  
+✅ Multiple projects now run in parallel behind one proxy — fixes `Bind for 0.0.0.0:80 failed: port is already allocated`  
+✅ Label-based routing: each project is served at `https://<PROJECT_DOMAIN>` via the shared `lampbox_web` network  
+✅ Shared `*.local` TLS certificate (`traefik/generate-certs.sh`) instead of a per-project one  
+✅ New management commands: `./lamp.sh proxy-up` and `./lamp.sh proxy-down` (+ Makefile targets)  
+✅ Reverse proxy override now clears the webserver host ports with `!reset` so proxied projects never bind 80/443/8080  
+✅ **`MYSQL_PORT` is now empty by default**: the database is no longer published on the host, so multiple projects run in parallel out of the box. Set a unique value per project only when a GUI client needs host access  
+✅ Fixed `MYSQL_PORT=` (empty) never actually disabling the database host port: the old `docker-compose.no-mysql-port.yml` used a no-op `ports: []` and `${MYSQL_PORT:-3306}` fell back to 3306, so a 2nd project always collided on 3306 and failed to start  
+✅ Inverted the database port logic — the base stack no longer publishes it; the new `docker-compose.mysql-port.yml` **adds** it only when `MYSQL_PORT` is set (replaces `docker-compose.no-mysql-port.yml`)  
+✅ Removed `config/nginx/` and the `NGINX_*` variables from `sample.env`  
+✅ Updated documentation (README, QUICKSTART, EXAMPLES, TROUBLESHOOTING, WINDOWS)
+
 ### 2.1.0 - 2026-05-11
 ✅ Fixed reverse proxy domain substitution and phpMyAdmin redirect handling  
 ✅ Fixed SSL certificate generation under Git Bash/Windows (MSYS path conversion)  

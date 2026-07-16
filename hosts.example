@@ -9,6 +9,9 @@
 #   (paste the lines below)
 #   (save and exit)
 
+# Traefik dashboard (shared reverse proxy) - optional
+127.0.0.1    traefik.local
+
 # Single project example
 127.0.0.1    myproject.local
 127.0.0.1    www.myproject.local

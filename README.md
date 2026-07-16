@@ -2,7 +2,7 @@
   <img src="docs/LampBox_Logo.png" alt="LampBox Logo" width="200">
 </div>
 
-# 🐳 LampBox v2.1.0
+# 🐳 LampBox v2.2.0
 
 Modern, cross-platform LAMP development environment with Docker.
 
@@ -17,7 +17,7 @@ Modern, cross-platform LAMP development environment with Docker.
 - 🚀 **Multiple PHP versions** (8.0, 8.1, 8.2, 8.3, 8.4, 8.5)
 - 💾 **Multiple databases** (MySQL 8.0, 8.4, MariaDB 10.3-10.6, 10.11, 11.8, 12.1)
 - 🔒 **HTTPS/SSL** support with auto-generated certificates
-- 🎯 **Dual access modes**: Direct ports or reverse proxy (Nginx)
+- 🎯 **Dual access modes**: Direct ports or shared reverse proxy (Traefik, multi-project)
 - 🔧 **phpMyAdmin** included and pre-configured
 - 🌍 **Cross-platform**: Linux, macOS, Windows (Git Bash/WSL2/CMD)
 - 📦 **Isolated projects**: Run multiple LAMP stacks simultaneously
@@ -71,10 +71,14 @@ PHPVERSION=php83
 # Database (mysql8, mysql84, mariadb103-106, mariadb1011, mariadb118, mariadb121)
 DATABASE=mysql8
 
-# Ports (change if running multiple projects)
+# Ports (change if running multiple projects in direct port mode)
 HTTP_PORT=8080
 HTTPS_PORT=8443
-MYSQL_PORT=3306
+
+# Database port on the host: empty = not published (safe default for
+# multiple projects). Set a UNIQUE value per project only if you need a
+# GUI client (TablePlus, DBeaver...): 3306, 3307, ...
+MYSQL_PORT=
 
 # Access mode
 USE_REVERSE_PROXY=false  # false=ports, true=domains
@@ -142,33 +146,42 @@ Access via `http://localhost:8080`
 **Pros:** Simple, no configuration needed  
 **Cons:** Different ports per project
 
-### Mode 2: Domain-Based Access (Reverse Proxy)
+### Mode 2: Domain-Based Access (Traefik reverse proxy)
 
-Access via `https://myproject.local`
+Access via `https://myproject.local`.
+
+Routing is handled by a **single, shared Traefik instance** that owns ports
+80/443 for the whole machine. Each project attaches to a shared Docker network
+and is routed by its domain — so you can run **many projects in parallel**
+without any port conflicts.
 
 **Setup:**
 
 ```bash
 # 1. Edit .env
 USE_REVERSE_PROXY=true
-PROJECT_DOMAIN=myproject.local
+PROJECT_DOMAIN=myproject.local      # must be unique per project
 
 # 2. Add to /etc/hosts (or C:\Windows\System32\drivers\etc\hosts)
 127.0.0.1    myproject.local
 
-# 3. Generate SSL certificates
-./generate-ssl-certs.sh
+# 3. Start the shared Traefik proxy once (creates the network + TLS cert)
+./lamp.sh proxy-up
 
-# 4. Start with proxy profile
-docker compose -f docker-compose.yml -f docker-compose.proxy.yml --profile proxy up -d
+# 4. Start your project behind Traefik
+./lamp.sh start
 ```
 
-**Pros:** Clean URLs, HTTPS by default, professional  
+`./lamp.sh start` also runs `proxy-up` automatically if Traefik isn't up yet.
+
+**Pros:** Clean URLs, HTTPS by default, unlimited parallel projects  
 **Cons:** Requires hosts file modification
 
 ## 🔀 Running Multiple Projects
 
-Each project needs unique identifiers:
+### In direct port mode
+
+Each project needs unique identifiers and ports:
 
 ```bash
 # Project 1
@@ -182,12 +195,24 @@ HTTP_PORT=8081
 MYSQL_PORT=3307
 ```
 
-Or use reverse proxy mode with different domains:
+### In reverse proxy mode (recommended)
+
+Give each project a unique `COMPOSE_PROJECT_NAME` and `PROJECT_DOMAIN`, then let
+the shared Traefik route them. No port juggling required:
 
 ```bash
-# Project 1: https://project1.local
-# Project 2: https://project2.local
+# One-time: start the shared proxy
+./lamp.sh proxy-up
+
+# Project 1 (.env: PROJECT_DOMAIN=project1.local, COMPOSE_PROJECT_NAME=project1)
+cd project1 && ./lamp.sh start      # → https://project1.local
+
+# Project 2 (.env: PROJECT_DOMAIN=project2.local, COMPOSE_PROJECT_NAME=project2)
+cd project2 && ./lamp.sh start      # → https://project2.local
 ```
+
+Each project keeps its own PHP version, its own database and its own
+phpMyAdmin (`https://projectN.local/<COMPOSE_PROJECT_NAME>-mysql`).
 
 ## 📂 Project Structure
 
@@ -196,26 +221,32 @@ LampBox/
 ├── bin/                      # Dockerfiles for PHP and database versions
 ├── config/
 │   ├── vhosts/              # Apache virtual hosts
-│   ├── nginx/               # Nginx reverse proxy config
 │   ├── php/                 # php.ini
-│   ├── ssl/                 # SSL certificates
+│   ├── ssl/                 # SSL certificates (direct Apache HTTPS)
 │   ├── phpmyadmin/          # phpMyAdmin config
 │   └── initdb/              # MySQL init scripts (.sql, .sh)
+├── traefik/                 # Shared Traefik reverse proxy stack
+│   ├── docker-compose.yml   # Traefik service (owns ports 80/443)
+│   ├── traefik.yml          # Static config (entrypoints, providers)
+│   ├── dynamic.yml          # TLS default certificate config
+│   ├── generate-certs.sh    # Shared *.local certificate generator
+│   └── certs/               # Shared TLS certificate (generated)
 ├── data/
 │   └── mysql/               # MySQL data (persistent)
 ├── logs/
 │   ├── apache2/             # Apache logs
-│   ├── mysql/               # MySQL logs
-│   └── nginx/               # Nginx logs
+│   └── mysql/               # MySQL logs
 ├── www/                      # Your web files (document root)
 ├── docs/                     # Documentation
 ├── test/                     # Test scripts for configurations
-├── docker-compose.yml        # Docker Compose configuration
+├── docker-compose.yml        # Base stack (webserver + database)
+├── docker-compose.proxy.yml  # Reverse proxy override (Traefik labels)
+├── docker-compose.mysql-port.yml # Publishes the DB port (if MYSQL_PORT is set)
 ├── sample.env               # Environment template
 ├── init.sh                  # Initialization script (Linux/Mac/Git Bash)
 ├── init.bat                 # Initialization script (Windows CMD)
 ├── lamp.sh                  # Management helper script
-├── generate-ssl-certs.sh    # SSL certificate generator
+├── generate-ssl-certs.sh    # SSL cert generator (direct Apache HTTPS)
 └── check-system.sh          # System requirements checker
 ```
 
@@ -283,9 +314,18 @@ Xdebug is included. VS Code configuration in `.vscode/launch.json`:
 docker compose exec database mysql -u docker -p
 ```
 
-**External connection:**
+**External connection (GUI client on your host):**
+
+Disabled by default — `MYSQL_PORT` is empty so nothing is published on the host,
+which lets several projects run side by side. To enable it, set a **unique**
+port in that project's `.env` and restart:
+
+```bash
+MYSQL_PORT=3306    # use 3307, 3308... for further projects
+```
+
 - Host: `localhost`
-- Port: `3306` (or value in `.env`)
+- Port: the `MYSQL_PORT` value you set
 - User: `docker` / Pass: `docker`
 
 ## 🐛 Troubleshooting
@@ -352,7 +392,14 @@ For production:
 - Review and harden all configurations
 - Use environment-specific configs
 
-## 🆚 What's New in v2.1.0
+## 🆚 What's New in v2.2.0
+
+### Version 2.2.0 (2026-07-15)
+- ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance
+- ✅ Run **multiple projects in parallel** behind one proxy — no more `port is already allocated`
+- ✅ Label-based routing: each project is reached at `https://<PROJECT_DOMAIN>`
+- ✅ Shared `*.local` TLS certificate and shared `lampbox_web` network
+- ✅ New commands: `./lamp.sh proxy-up` / `proxy-down`
 
 ### Version 2.1.0 (2026-05-11)
 - ✅ Fixed reverse proxy domain substitution and phpMyAdmin redirect handling
@@ -387,7 +434,7 @@ See [CHANGELOG.md](CHANGELOG.md) for full history.
 - **PHP**: Custom builds from `php:8.0-apache` to `php:8.5-apache`
 - **MySQL**: `mysql:8.0`, `mysql:8.4`
 - **MariaDB**: `mariadb:10.3` to `mariadb:10.6`, `mariadb:10.11`, `mariadb:11.8`, `mariadb:12.1`
-- **Nginx**: `nginx:alpine`
+- **Traefik**: `traefik:v3.6` (shared reverse proxy)
 - **phpMyAdmin**: Built into PHP images
 
 ## 🤝 Contributing

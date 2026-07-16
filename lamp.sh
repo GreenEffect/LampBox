@@ -38,15 +38,54 @@ compose_files() {
         args+=( -f docker-compose.proxy.yml )
     fi
 
-    if [ -z "$MYSQL_PORT" ]; then
-        args+=( -f docker-compose.no-mysql-port.yml )
-    fi
-
-    if [ "$USE_REVERSE_PROXY" = "true" ]; then
-        args+=( --profile proxy )
+    # The database has no host port by default; publish one only if requested
+    if [ -n "$MYSQL_PORT" ]; then
+        args+=( -f docker-compose.mysql-port.yml )
     fi
 
     echo "${args[@]}"
+}
+
+# Shared Traefik reverse proxy management
+PROXY_NETWORK="${PROXY_NETWORK:-lampbox_web}"
+TRAEFIK_COMPOSE="traefik/docker-compose.yml"
+
+# Ensure the shared network, TLS certificate and Traefik container are ready.
+ensure_proxy() {
+    # Create the shared external network if it does not exist yet
+    if ! docker network inspect "$PROXY_NETWORK" >/dev/null 2>&1; then
+        print_info "Creating shared proxy network: $PROXY_NETWORK"
+        docker network create "$PROXY_NETWORK" >/dev/null
+    fi
+
+    # Ensure the shared TLS certificate exists
+    if [ ! -f "traefik/certs/cert.pem" ]; then
+        print_warning "Shared TLS certificate not found!"
+        print_info "Generating shared *.local certificate..."
+        ./traefik/generate-certs.sh
+    fi
+
+    # Ensure the shared Traefik container is running
+    if ! docker ps --format '{{.Names}}' | grep -q '^lampbox-traefik$'; then
+        print_info "Starting shared Traefik reverse proxy..."
+        docker compose -f "$TRAEFIK_COMPOSE" up -d
+    fi
+}
+
+# Start the shared Traefik reverse proxy
+proxy_up() {
+    print_header "Starting shared Traefik reverse proxy"
+    ensure_proxy
+    print_info "✓ Traefik is running and owns ports 80/443"
+    print_info "Dashboard (add traefik.local to your hosts file): https://traefik.local"
+}
+
+# Stop the shared Traefik reverse proxy
+proxy_down() {
+    print_header "Stopping shared Traefik reverse proxy"
+    docker compose -f "$TRAEFIK_COMPOSE" down
+    print_info "✓ Traefik stopped"
+    print_warning "Running projects lose HTTPS routing until Traefik is started again."
 }
 
 mysql_data_exists() {
@@ -113,7 +152,9 @@ ${GREEN}Commands:${NC}
   rebuild         Rebuild and restart containers
   clean           Stop and remove all containers, networks, and volumes
   clean-db        Clean MySQL data directory only (fix initialization errors)
-  ssl             Generate SSL certificates
+  ssl             Generate the shared Traefik TLS certificate (*.local)
+  proxy-up        Start the shared Traefik reverse proxy (owns ports 80/443)
+  proxy-down      Stop the shared Traefik reverse proxy
   info            Show connection information
 
 ${GREEN}Options:${NC}
@@ -121,8 +162,9 @@ ${GREEN}Options:${NC}
   --follow, -f    Follow logs in real-time (for logs command)
 
 ${GREEN}Examples:${NC}
+  $0 proxy-up             Start the shared Traefik proxy (once for all projects)
   $0 start                Start in direct port mode
-  $0 start --proxy        Start with reverse proxy
+  $0 start --proxy        Start behind Traefik (multi-project reverse proxy)
   $0 logs -f              Follow all logs
   $0 logs webserver       Show webserver logs only
   $0 shell                Open shell in webserver
@@ -138,19 +180,16 @@ start() {
     print_header "Starting LampBox: $COMPOSE_PROJECT_NAME"
     
     if [ "$1" = "--proxy" ] || [ "$1" = "-p" ] || [ "$USE_REVERSE_PROXY" = "true" ]; then
-        print_info "Starting with reverse proxy mode..."
-        
-        # Check if SSL certificates exist
-        if [ ! -f "config/nginx/ssl/cert.pem" ]; then
-            print_warning "SSL certificates not found!"
-            print_info "Generating SSL certificates..."
-            ./generate-ssl-certs.sh
-        fi
-        
+        print_info "Starting with reverse proxy mode (Traefik)..."
+
+        # Ensure the shared Traefik proxy, network and TLS certificate are ready
+        ensure_proxy
+
         local COMPOSE_CMD=($(compose_files))
         "${COMPOSE_CMD[@]}" up -d
-        print_info "✓ Stack started with reverse proxy"
+        print_info "✓ Stack started behind Traefik"
         print_info "Access your site at: https://$PROJECT_DOMAIN"
+        print_warning "Make sure '$PROJECT_DOMAIN' points to 127.0.0.1 in your hosts file."
     else
         print_info "Starting in direct port mode..."
         local COMPOSE_CMD=($(compose_files))
@@ -295,11 +334,10 @@ clean_db() {
     fi
 }
 
-# Generate SSL certificates
+# Generate the shared Traefik TLS certificate
 generate_ssl() {
-    check_env
-    print_info "Generating SSL certificates..."
-    ./generate-ssl-certs.sh
+    print_info "Generating shared Traefik TLS certificate (*.local)..."
+    ./traefik/generate-certs.sh
 }
 
 # Show connection info
@@ -370,6 +408,12 @@ case "$1" in
         ;;
     ssl)
         generate_ssl
+        ;;
+    proxy-up)
+        proxy_up
+        ;;
+    proxy-down)
+        proxy_down
         ;;
     info)
         show_info

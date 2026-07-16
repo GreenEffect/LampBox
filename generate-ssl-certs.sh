@@ -1,10 +1,14 @@
 #!/bin/bash
 
 # ==============================================================================
-# SSL Certificate Generator for LampBox
+# SSL Certificate Generator for LampBox (direct Apache HTTPS mode)
 # ==============================================================================
-# This script generates self-signed SSL certificates for local development
-# 
+# This script generates a self-signed certificate for the OPTIONAL direct
+# Apache HTTPS access (the commented *:443 vhost in config/vhosts/default.conf).
+#
+# For reverse proxy mode, certificates are handled by the shared Traefik stack:
+#   ./traefik/generate-certs.sh   (or  ./lamp.sh ssl)
+#
 # Usage:
 #   ./generate-ssl-certs.sh [domain]
 #
@@ -52,18 +56,16 @@ if [ -z "$DOMAIN" ]; then
     exit 1
 fi
 
-# Create SSL directories if they don't exist
-SSL_DIR="./config/nginx/ssl"
+# Create SSL directory if it doesn't exist
 APACHE_SSL_DIR="./config/ssl"
 
-mkdir -p "$SSL_DIR"
 mkdir -p "$APACHE_SSL_DIR"
 
 print_info "Generating SSL certificates for domain: $DOMAIN"
 
 # Certificate files
-CERT_FILE="$SSL_DIR/cert.pem"
-KEY_FILE="$SSL_DIR/cert-key.pem"
+CERT_FILE="$APACHE_SSL_DIR/cert.pem"
+KEY_FILE="$APACHE_SSL_DIR/cert-key.pem"
 
 # Check if openssl is installed
 if ! command -v openssl &> /dev/null; then
@@ -96,15 +98,11 @@ fi
 chmod 644 "$CERT_FILE"
 chmod 600 "$KEY_FILE"
 
-# Copy certificates to Apache SSL directory for direct HTTPS access
-cp -f "$CERT_FILE" "$APACHE_SSL_DIR/"
-cp -f "$KEY_FILE" "$APACHE_SSL_DIR/"
-
 print_info "✓ SSL certificates generated successfully!"
 echo ""
-print_info "Certificate location:"
-echo "  - Nginx:  $CERT_FILE"
-echo "  - Apache: $APACHE_SSL_DIR/cert.pem"
+print_info "Certificate location (Apache direct HTTPS):"
+echo "  - $CERT_FILE"
+echo "  - $KEY_FILE"
 echo ""
 print_warning "These are self-signed certificates. Your browser will show a security warning."
 print_info "To avoid warnings, you can:"

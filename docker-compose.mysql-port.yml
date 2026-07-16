@@ -1,0 +1,15 @@
+# ==============================================================================
+# LampBox - Publish the database port on the host
+# ==============================================================================
+# Applied by lamp.sh only when MYSQL_PORT is set in .env.
+#
+# The database is NOT published by default (see docker-compose.yml), so several
+# projects can run in parallel without fighting over port 3306. Use this only
+# when you need a GUI client (TablePlus, DBeaver...) to reach the database, and
+# give each project a UNIQUE MYSQL_PORT value.
+# ==============================================================================
+
+services:
+  database:
+    ports:
+      - "${MYSQL_PORT}:3306"

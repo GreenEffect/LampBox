@@ -1,0 +1,14 @@
+# ==============================================================================
+# LampBox - Traefik dynamic configuration
+# ==============================================================================
+# Provides the shared self-signed TLS certificate used as the default
+# certificate for every *.local domain served through Traefik.
+# Generate the certificate with: ./traefik/generate-certs.sh
+# ==============================================================================
+
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/cert.pem
+        keyFile: /certs/cert-key.pem
