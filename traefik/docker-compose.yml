@@ -1,0 +1,39 @@
+# ==============================================================================
+# LampBox - Shared Traefik reverse proxy
+# ==============================================================================
+# A single, always-on Traefik instance that owns host ports 80/443 and routes
+# every LampBox project by its domain. Start it once with:
+#   ./lamp.sh proxy-up      (or)   docker compose -f traefik/docker-compose.yml up -d
+#
+# Each project attaches to the shared external network 'lampbox_web' and
+# declares Traefik labels on its webserver container (see docker-compose.proxy.yml).
+# ==============================================================================
+
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: lampbox-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Read-only access to the Docker socket for label auto-discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./certs:/certs:ro
+    networks:
+      - lampbox_web
+    labels:
+      - "traefik.enable=true"
+      # Optional dashboard at https://traefik.local (add it to your hosts file)
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.local`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.service=api@internal"
+
+networks:
+  lampbox_web:
+    external: true
+    name: lampbox_web

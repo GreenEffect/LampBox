@@ -1,0 +1,40 @@
+# ==============================================================================
+# LampBox - Traefik static configuration
+# ==============================================================================
+# Shared reverse proxy for all LampBox projects.
+# Traefik owns host ports 80/443 and routes each project by its domain,
+# using Docker labels declared on each project's webserver container.
+# ==============================================================================
+
+# Entry points (host ports owned by Traefik)
+entryPoints:
+  web:
+    address: ":80"
+    # Redirect all plain HTTP traffic to HTTPS
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+
+# Providers
+providers:
+  # Auto-discover project containers via their Docker labels
+  docker:
+    exposedByDefault: false
+    network: lampbox_web
+    watch: true
+  # File provider for the shared TLS certificate (see dynamic.yml)
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+# Dashboard (routed to traefik.local, see docker-compose.yml labels)
+api:
+  dashboard: true
+
+# Local development: reduce log noise, keep it readable
+log:
+  level: INFO

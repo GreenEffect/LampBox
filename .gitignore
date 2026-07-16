@@ -20,6 +20,10 @@ config/ssl/*.key
 config/nginx/ssl/*.pem
 config/nginx/ssl/*.crt
 config/nginx/ssl/*.key
+traefik/certs/*.pem
+traefik/certs/*.crt
+traefik/certs/*.key
+!traefik/certs/.gitkeep
 
 # Backups
 *.sql
