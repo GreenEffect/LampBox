@@ -72,8 +72,7 @@ shell: ## Open bash shell in webserver container
 	@docker compose exec webserver bash
 
 mysql: ## Open MySQL shell
-	@echo "$(GREEN)Opening MySQL shell...$(NC)"
-	@docker compose exec database mysql -u root -p$(MYSQL_ROOT_PASSWORD)
+	@./lamp.sh mysql
 
 ##@ Maintenance
 
@@ -148,17 +147,16 @@ php: ## Run PHP command (use: make php CMD="artisan migrate")
 
 ##@ Database
 
-db-backup: ## Backup database to backups/$(date).sql
-	@echo "$(GREEN)Backing up database...$(NC)"
-	@mkdir -p backups
-	@docker compose exec -T database mysqldump -u root -p$(MYSQL_ROOT_PASSWORD) --all-databases > backups/backup-$$(date +%Y%m%d-%H%M%S).sql
-	@echo "$(GREEN)✓ Database backed up to backups/backup-$$(date +%Y%m%d-%H%M%S).sql$(NC)"
+db-backup: ## Dump all databases to data/db-dumps/ (same as ./lamp.sh dump)
+	@./lamp.sh dump
 
-db-restore: ## Restore database from backup (use: make db-restore FILE=backups/backup.sql)
+db-restore: ## Restore a dump, .sql or .sql.gz (use: make db-restore FILE=data/db-dumps/x.sql.gz)
 	@if [ -z "$(FILE)" ]; then \
-		echo "$(YELLOW)Usage: make db-restore FILE=backups/backup.sql$(NC)"; \
+		echo "$(YELLOW)Usage: make db-restore FILE=data/db-dumps/<dump>.sql.gz$(NC)"; \
 		exit 1; \
 	fi
 	@echo "$(GREEN)Restoring database from $(FILE)...$(NC)"
-	@docker compose exec -T database mysql -u root -p$(MYSQL_ROOT_PASSWORD) < $(FILE)
+	@case "$(FILE)" in *.gz) gzip -dc "$(FILE)" ;; *) cat "$(FILE)" ;; esac \
+		| docker compose exec -T database sh -c \
+		'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" exec "$$(command -v mariadb || command -v mysql)" -uroot'
 	@echo "$(GREEN)✓ Database restored$(NC)"

@@ -6,6 +6,7 @@
 # Data directories
 data/mysql/*
 !data/mysql/.gitkeep
+data/db-dumps/
 logs/*
 !logs/.gitkeep
 !logs/apache2/.gitkeep

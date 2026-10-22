@@ -149,6 +149,7 @@ ${GREEN}Commands:${NC}
   logs            Show logs (use -f to follow)
   shell           Open bash shell in webserver container
   mysql           Open MySQL shell
+  dump            Dump all databases to data/db-dumps/ (consistent backup)
   rebuild         Rebuild and restart containers
   update          Pull the latest PHP image and recreate the webserver only
   clean           Stop and remove all containers, networks, and volumes
@@ -259,10 +260,14 @@ shell() {
 }
 
 # Open MySQL shell
+# The password is read from the container environment (MYSQL_PWD), so it never
+# appears on a command line and is not altered by '$' in .env values.
 mysql_shell() {
     check_env
     print_info "Opening MySQL shell..."
-    docker compose exec database mysql -u root -p"$MYSQL_ROOT_PASSWORD"
+    local COMPOSE_CMD=($(compose_files))
+    "${COMPOSE_CMD[@]}" exec database sh -c \
+        'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec "$(command -v mariadb || command -v mysql)" -uroot'
 }
 
 # Rebuild containers
@@ -340,6 +345,43 @@ update() {
     fi
     print_info "✓ Webserver now runs PHP $running"
     print_info "Rollback: docker tag $image:pre-update $image && ${COMPOSE_CMD[*]} up -d --no-deps webserver"
+}
+
+# Dump all databases to data/db-dumps/<project>-<date>.sql.gz.
+# The dump is consistent while the site is running (--single-transaction),
+# unlike a copy of the MySQL data directory. Keeps the DB_DUMP_KEEP most
+# recent dumps (default 7).
+dump() {
+    check_env
+    local dir="${DB_DUMP_DIR:-./data/db-dumps}"
+    local keep="${DB_DUMP_KEEP:-7}"
+    local file="$dir/${COMPOSE_PROJECT_NAME}-$(date -u +%Y-%m-%d_%H%M%S).sql.gz"
+    local COMPOSE_CMD=($(compose_files))
+
+    mkdir -p "$dir"
+    chmod 700 "$dir"
+    print_info "Dumping all databases to $file..."
+
+    # Password read from the container environment, never on a command line
+    if ( set -o pipefail
+         "${COMPOSE_CMD[@]}" exec -T database sh -c '
+             D=$(command -v mariadb-dump || command -v mysqldump)
+             MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec "$D" -uroot --all-databases \
+                 --single-transaction --quick --routines --events --triggers' \
+             | gzip > "$file.tmp" ) \
+       && gzip -dc "$file.tmp" | tail -n 1 | grep -q 'Dump completed'; then
+        mv "$file.tmp" "$file"
+        chmod 600 "$file"
+        print_info "✓ Dump complete ($(du -h "$file" | cut -f1))"
+    else
+        rm -f "$file.tmp"
+        print_error "Dump failed or incomplete"
+        exit 1
+    fi
+
+    # Rotation: keep the $keep most recent dumps of this project
+    ls -1t "$dir/${COMPOSE_PROJECT_NAME}"-*.sql.gz 2>/dev/null | tail -n +$((keep + 1)) \
+        | while read -r old; do rm -f "$old"; done
 }
 
 # Clean everything
@@ -457,6 +499,9 @@ case "$1" in
         ;;
     mysql)
         mysql_shell
+        ;;
+    dump)
+        dump
         ;;
     rebuild)
         rebuild "$2"
