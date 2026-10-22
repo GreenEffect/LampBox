@@ -84,13 +84,16 @@ MYSQL_PORT=
 
 # Access mode
 USE_REVERSE_PROXY=false  # false=ports, true=domains
+
+# Environment (see Production Mode below)
+LAMPBOX_ENV=development  # or production
 ```
 
 ### Switching PHP Versions
 
 ```bash
 # Edit .env
-PHPVERSION=php84  # or php82, php83, php84, php85
+PHPVERSION=php84  # or php82, php83, php85
 
 # Rebuild (pulls the latest PHP image) and restart
 ./lamp.sh rebuild
@@ -117,7 +120,7 @@ as `<project>-webserver:pre-update` for a rollback. A plain
 ./lamp.sh dump
 
 # Edit .env
-DATABASE=mariadb1011  # or mysql84, mysql97, mariadb1011, mariadb114, mariadb118, mariadb123
+DATABASE=mariadb1011  # or mysql84, mysql97, mariadb114, mariadb118, mariadb123
 
 # Restart: each engine uses its own directory (data/mysql-<DATABASE>), so the
 # new one starts empty and the previous data stays untouched
@@ -261,7 +264,7 @@ LampBox/
 │   └── db-dumps/            # Dumps from ./lamp.sh dump
 ├── logs/
 │   ├── apache2/             # Apache logs
-│   └── mysql/               # MySQL logs
+│   └── mysql-<DATABASE>/    # MySQL logs
 ├── www/                      # Your web files (document root)
 ├── docs/                     # Documentation
 ├── docker-compose.yml        # Base stack (webserver + database)
@@ -306,7 +309,7 @@ Xdebug is included (develop mode by default, turned off with
 **Via CLI:**
 ```bash
 ./lamp.sh mysql
-# or
+# or ('mysql' on MySQL images, 'mariadb' on MariaDB images)
 docker compose exec database mysql -u docker -p
 ```
 
@@ -345,7 +348,7 @@ MYSQL_PORT=3307
 ```bash
 # Clean database and restart
 ./lamp.sh clean-db
-docker compose up -d
+./lamp.sh start
 ```
 
 **phpMyAdmin: "Permissions incorrect"**

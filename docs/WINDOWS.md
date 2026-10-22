@@ -95,7 +95,7 @@ docker compose logs -f
 # Shell dans le conteneur
 docker compose exec webserver bash
 
-# MySQL shell
+# MySQL shell ('mariadb' au lieu de 'mysql' avec MariaDB)
 docker compose exec database mysql -u root -p
 ```
 
@@ -114,7 +114,7 @@ docker compose logs -f
 REM Shell dans le conteneur
 docker exec -it lamp-webserver bash
 
-REM MySQL shell
+REM MySQL shell ('mariadb' au lieu de 'mysql' avec MariaDB)
 docker exec -it lamp-database mysql -u root -p
 ```
 

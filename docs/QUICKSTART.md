@@ -226,8 +226,8 @@ HTTP_PORT=8081
 # Check logs
 ./lamp.sh logs database
 
-# Clean and restart
-./lamp.sh clean
+# Clean the database data (removes it!) and restart
+./lamp.sh clean-db
 ./lamp.sh start
 ```
 

@@ -330,7 +330,7 @@ MYSQL_PASSWORD=symfony
 APP_ENV=dev
 APP_SECRET=your-secret-key
 
-DATABASE_URL="mysql://symfony:symfony@symfony-database:3306/symfony?serverVersion=8.0"
+DATABASE_URL="mysql://symfony:symfony@symfony-database:3306/symfony?serverVersion=8.4"
 ```
 
 **/etc/hosts:**

@@ -693,7 +693,7 @@ docker network inspect lamp-network
 docker compose exec webserver php -v
 docker compose exec webserver apache2 -v
 
-# Database info
+# Database info ('mysql' on MySQL images, 'mariadb' on MariaDB images)
 docker compose exec database mysql --version
 
 # Environment variables
