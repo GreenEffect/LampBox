@@ -69,6 +69,12 @@ docker compose up -d
 # Open MySQL shell
 ./lamp.sh mysql
 
+# Dump all databases to data/db-dumps/
+./lamp.sh dump
+
+# Apply a PHP security release (webserver only, database untouched)
+./lamp.sh update
+
 # Show connection info
 ./lamp.sh info
 
@@ -188,6 +194,14 @@ MYSQL_ROOT_PASSWORD=mypassword
 MYSQL_DATABASE=mydatabase
 MYSQL_USER=myuser
 MYSQL_PASSWORD=mypassword
+# Values containing '$' must be single-quoted: MYSQL_PASSWORD='abc$xyz'
+```
+
+### Production Settings
+```bash
+# In .env: hide PHP errors, turn Xdebug off, deny phpMyAdmin
+LAMPBOX_ENV=production
+PHPMYADMIN_REQUIRE=        # empty = "all denied"; or e.g. "ip 203.0.113.10"
 ```
 
 ---

@@ -49,15 +49,15 @@ docker compose up -d
 
 **Solution 3: With Backup**
 ```bash
-# Backup existing data first
-docker compose exec database mysqldump -u root -p --all-databases > backup.sql
+# Backup existing data first (consistent dump in data/db-dumps/)
+./lamp.sh dump
 
 # Clean and restart
 ./lamp.sh clean-db
 docker compose up -d
 
 # Restore if needed
-docker compose exec -T database mysql -u root -p < backup.sql
+make db-restore FILE=data/db-dumps/<dump>.sql.gz
 ```
 
 **Prevention:**
@@ -195,6 +195,11 @@ docker compose ps webserver
 ./lamp.sh logs webserver
 ```
 
+**"Forbidden" (403):** access is restricted by `PHPMYADMIN_REQUIRE`, which
+defaults to `all denied` when `LAMPBOX_ENV=production`. Check the effective
+rule with `./lamp.sh info`, then allow your IP in `.env`
+(`PHPMYADMIN_REQUIRE=ip 203.0.113.10`) and run `./lamp.sh restart`.
+
 ### phpMyAdmin Login Fails
 
 **Check credentials:**
@@ -204,13 +209,11 @@ cat .env | grep MYSQL_
 
 # Try with these credentials
 # User: docker
-# Password: docker
-
-# OR
-
-# User: root
-# Password: tiger (or MYSQL_ROOT_PASSWORD value)
+# Password: docker (or MYSQL_USER / MYSQL_PASSWORD values)
 ```
+
+Root login is disabled in phpMyAdmin (`AllowRoot = false`): use
+`./lamp.sh mysql` for root access.
 
 **Reset MySQL password:**
 ```bash
@@ -640,8 +643,7 @@ innodb_buffer_pool_size = 256M
 
 **Force rebuild:**
 ```bash
-docker compose down
-docker compose up -d --build
+./lamp.sh rebuild    # pulls the latest base images, then rebuilds without cache
 ```
 
 **Check volume mounts:**

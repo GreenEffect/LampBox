@@ -47,7 +47,7 @@ docker compose up -d
 
 **Default credentials:**
 - MySQL User: `docker` / Password: `docker`
-- MySQL Root: `root` / Password: `tiger`
+- MySQL Root: `root` / Password: `tiger` (command line only: root login is disabled in phpMyAdmin)
 
 ## 📖 Documentation
 
@@ -55,6 +55,7 @@ docker compose up -d
 - **[Examples](docs/EXAMPLES.md)** - Real-world use cases and configurations
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Windows Guide](docs/WINDOWS.md)** - Windows-specific instructions
+- **[Migration Guide](docs/MIGRATION.md)** - Update a project created with an older LampBox
 - **[Changelog](CHANGELOG.md)** - Version history
 
 ## ⚙️ Configuration
@@ -90,10 +91,23 @@ USE_REVERSE_PROXY=false  # false=ports, true=domains
 # Edit .env
 PHPVERSION=php84  # or php82, php83, php84, php85
 
-# Rebuild and restart
-docker compose down
-docker compose up -d --build
+# Rebuild (pulls the latest PHP image) and restart
+./lamp.sh rebuild
 ```
+
+### Applying PHP Security Releases
+
+The PHP images follow the latest patch release of their branch (e.g.
+`php:8.3-apache-bookworm`). When PHP publishes a security fix:
+
+```bash
+./lamp.sh update
+```
+
+It pulls the new base image, shows the running and new PHP versions, recreates
+**only** the webserver (the database is untouched) and keeps the previous image
+as `<project>-webserver:pre-update` for a rollback. A plain
+`docker compose up -d --build` does **not** pull a newer base image.
 
 ### Switching Database
 
@@ -119,9 +133,11 @@ Using the `lamp.sh` helper script:
 ./lamp.sh info           # Show connection info
 
 ./lamp.sh shell          # Access webserver shell
-./lamp.sh mysql          # Access MySQL shell
+./lamp.sh mysql          # Access MySQL shell (root)
+./lamp.sh dump           # Dump all databases to data/db-dumps/
 
-./lamp.sh rebuild        # Rebuild images
+./lamp.sh rebuild        # Rebuild images (pulls updated base images)
+./lamp.sh update         # Apply a PHP security release (webserver only)
 ./lamp.sh clean          # Clean everything (containers + data)
 ./lamp.sh clean-db       # Clean database only
 ./lamp.sh ssl            # Generate SSL certificates
@@ -220,8 +236,9 @@ phpMyAdmin (`https://projectN.local/<COMPOSE_PROJECT_NAME>-mysql`).
 LampBox/
 ├── bin/                      # Dockerfiles for PHP and database versions
 ├── config/
+│   ├── apache/              # remoteip.conf (real client IP behind Traefik)
 │   ├── vhosts/              # Apache virtual hosts
-│   ├── php/                 # php.ini
+│   ├── php/                 # php.ini (development), php-production.ini
 │   ├── ssl/                 # SSL certificates (direct Apache HTTPS)
 │   ├── phpmyadmin/          # phpMyAdmin config
 │   └── initdb/              # MySQL init scripts (.sql, .sh)
@@ -232,7 +249,8 @@ LampBox/
 │   ├── generate-certs.sh    # Shared *.local certificate generator
 │   └── certs/               # Shared TLS certificate (generated)
 ├── data/
-│   └── mysql/               # MySQL data (persistent)
+│   ├── mysql-<DATABASE>/    # MySQL data (persistent)
+│   └── db-dumps/            # Dumps from ./lamp.sh dump
 ├── logs/
 │   ├── apache2/             # Apache logs
 │   └── mysql/               # MySQL logs
@@ -241,6 +259,7 @@ LampBox/
 ├── docker-compose.yml        # Base stack (webserver + database)
 ├── docker-compose.proxy.yml  # Reverse proxy override (Traefik labels)
 ├── docker-compose.mysql-port.yml # Publishes the DB port (if MYSQL_PORT is set)
+├── docker-compose.production.yml # Production settings (if LAMPBOX_ENV=production)
 ├── sample.env               # Environment template
 ├── init.sh                  # Initialization script (Linux/Mac/Git Bash)
 ├── init.bat                 # Initialization script (Windows CMD)
@@ -253,7 +272,8 @@ LampBox/
 
 ### Xdebug
 
-Xdebug is included. VS Code configuration in `.vscode/launch.json`:
+Xdebug is included (develop mode by default, turned off with
+`LAMPBOX_ENV=production`). VS Code configuration in `.vscode/launch.json`:
 
 ```json
 {
@@ -271,7 +291,9 @@ Xdebug is included. VS Code configuration in `.vscode/launch.json`:
 
 **Via phpMyAdmin:**
 - URL: `http://localhost:8080/lamp-mysql`
-- User: `docker` / Pass: `docker`
+- User: `docker` / Pass: `docker` (root login is disabled)
+- Access is controlled by `PHPMYADMIN_REQUIRE` in `.env` (e.g. `ip 203.0.113.10`);
+  denied by default in production
 
 **Via CLI:**
 ```bash
@@ -347,16 +369,38 @@ sed -i 's/^GID=/GROUP_ID=/' .env
 
 See [Windows Guide](docs/WINDOWS.md) for detailed instructions.
 
-## 🔐 Security Notes
+## 🔐 Production Mode
 
-⚠️ **This stack is for LOCAL DEVELOPMENT only!**
+LampBox defaults to development settings. For a site exposed on the Internet,
+set in `.env`:
 
-For production:
-- Change all default passwords
+```bash
+LAMPBOX_ENV=production
+PHPMYADMIN_REQUIRE=            # empty = "all denied"; or e.g. "ip 203.0.113.10"
+```
+
+`lamp.sh` then applies `docker-compose.production.yml`:
+
+| | development | production |
+|---|---|---|
+| PHP settings | `config/php/php.ini` | `config/php/php-production.ini` |
+| PHP errors | displayed | logged in the Apache error log only |
+| Xdebug | develop mode | off |
+| `X-Powered-By` header | sent | not sent |
+| phpMyAdmin | open (`all granted`) | denied (`all denied`) unless `PHPMYADMIN_REQUIRE` allows it |
+
+In both modes phpMyAdmin refuses root logins and session upload progress is
+disabled. Running `docker compose` directly instead of `lamp.sh`? Add the
+override to `COMPOSE_FILE` in `.env` (see `sample.env`).
+
+Also for production:
+- Change all default passwords (quote values containing `$`: `'abc$xyz'`)
 - Use proper SSL certificates (Let's Encrypt)
-- Disable phpMyAdmin or restrict access
-- Review and harden all configurations
-- Use environment-specific configs
+- Back up with `./lamp.sh dump`, never by copying `data/` while the database runs
+- Apply PHP security releases with `./lamp.sh update`
+
+Updating a project created with an older LampBox: see the
+[Migration Guide](docs/MIGRATION.md).
 
 ## 🆚 What's New in v2.2.0
 
