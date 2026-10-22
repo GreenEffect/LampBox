@@ -10,7 +10,7 @@
 
 dc=$(which docker-compose)
 osversion=$(uname)
-dbarr=(mariadb1011 mariadb118 mariadb123 mysql8)
+dbarr=(mariadb1011 mariadb118 mariadb123 mysql84)
 
 checkdep() {
 
@@ -77,7 +77,7 @@ buildenvfile () {
 cat sample.env > ./buildtest/"$buildtarget"-"$version".env
 sed -i "s/COMPOSE_PROJECT_NAME=lamp/COMPOSE_PROJECT_NAME=$buildtarget-buildtest/" ./buildtest/"$buildtarget"-"$version".env
 sed -i "s/^PHPVERSION=.*/PHPVERSION=$buildtarget/" ./buildtest/"$buildtarget"-"$version".env
-sed -i "s/DATABASE=mysql8/DATABASE=$version/" ./buildtest/"$buildtarget"-"$version".env
+sed -i "s/^DATABASE=.*/DATABASE=$version/" ./buildtest/"$buildtarget"-"$version".env
 }
 
 prepare () {
@@ -111,9 +111,7 @@ if [[ $osversion != 'Linux' ]]; then
         exit
 fi
 
-# we don't want to test against mysql8 for the old
-# php versions due to pdo, therefore we only
-# take the first 5 elements of the database versions arrays
+# build the requested php version against every database of dbarr
 
 if [ "$buildtarget" == 'php82' ] || [ "$buildtarget" == 'php83' ] || [ "$buildtarget" == 'php84' ] || [ "$buildtarget" == 'php85' ] ; then
         for version in "${dbarr[@]}"

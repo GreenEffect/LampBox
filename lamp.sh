@@ -108,7 +108,7 @@ mysql_data_dir() {
     echo "${dir%/}"
 }
 
-# Engine marker, stored next to the data directory (e.g. data/mysql-mysql8.database).
+# Engine marker, stored next to the data directory (e.g. data/mysql-mysql84.database).
 # Never inside it: MySQL refuses to initialize a data directory that has files.
 mysql_engine_marker() {
     echo "$(mysql_data_dir).database"

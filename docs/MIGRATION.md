@@ -82,12 +82,15 @@ Then review:
 |---|---|
 | `MYSQL_DATA_DIR`, `MYSQL_LOG_DIR` | Point to your existing directories (see above) |
 | `PHPVERSION` | `php74`, `php8` and `php81` are no longer provided: use `php82` or later (see step 4) |
+| `DATABASE` | `mysql8`, `mariadb103`-`mariadb106` and `mariadb121` are no longer provided (see step 4) |
 | `MYSQL_PORT` | Leave empty unless a client on the host needs the database (it is no longer published by default) |
 | `LAMPBOX_ENV` | `production` for a public site (see step 6) |
 | `PHPMYADMIN_REQUIRE` | Who may open phpMyAdmin, e.g. `ip 203.0.113.10` |
 | Passwords containing `$` | Put them between single quotes: `MYSQL_PASSWORD='abc$xyz'` |
 
-## 4. Move Off Unsupported PHP Versions
+## 4. Move Off Unsupported Versions
+
+### PHP
 
 PHP 7.4, 8.0 and 8.1 receive no security fixes. Before switching `PHPVERSION`:
 
@@ -95,6 +98,43 @@ PHP 7.4, 8.0 and 8.1 receive no security fixes. Before switching `PHPVERSION`:
   (`composer.json` → `require.php`, CMS documentation);
 - update the application first if needed;
 - after the switch, watch `logs/apache2/error.log` for deprecations and errors.
+
+### Databases
+
+| Removed | Use instead |
+|---|---|
+| `mysql8` | `mysql84`: same engine, the `mysql:8` image tag already pointed to 8.4 |
+| `mariadb103` to `mariadb106` | `mariadb1011` or later (10.3-10.6 are end of life) |
+| `mariadb121` | `mariadb123` (12.3 LTS) |
+
+**`mysql8` → `mysql84`** keeps the data as is. Stop the project, then rename
+the default data directory and its engine marker:
+
+```bash
+./lamp.sh stop
+mv data/mysql-mysql8 data/mysql-mysql84
+echo mysql84 > data/mysql-mysql84.database && rm -f data/mysql-mysql8.database
+# .env: DATABASE=mysql84
+./lamp.sh start
+```
+
+(With an explicit `MYSQL_DATA_DIR`, keep the directory and only update its
+`.database` marker.)
+
+**Older MariaDB → `mariadb1011` or later**: with the default per-engine
+directories the new version starts on an empty directory, so move the data with
+a dump:
+
+```bash
+./lamp.sh dump
+# .env: DATABASE=mariadb1011 (or mariadb118, mariadb123)
+./lamp.sh restart
+make db-restore FILE=data/db-dumps/<dump>.sql.gz
+```
+
+The previous data directory is left untouched: delete it once the site is
+checked. Dumps from 10.3 contain older system tables: restore only your
+application databases from them.
 
 ## 5. Old Compose Files: What Changed
 
