@@ -160,7 +160,7 @@ Both projects now run simultaneously! 🎊
 ### Change PHP Version
 ```bash
 # In .env
-PHPVERSION=php83  # Options: php8, php81, php82, php83, php84, php85
+PHPVERSION=php83  # Options: php82, php83, php84, php85
 ```
 
 ### Change Database

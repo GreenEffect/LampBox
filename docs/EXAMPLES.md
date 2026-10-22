@@ -135,7 +135,7 @@ HTTP_PORT=8082
 HTTPS_PORT=8445
 MYSQL_PORT=3308
 
-PHPVERSION=php81
+PHPVERSION=php82
 DATABASE=mysql8
 
 MYSQL_ROOT_PASSWORD=root
@@ -552,9 +552,6 @@ PHPVERSION=php83
 
 # Project 4: PHP 8.2 (legacy)
 PHPVERSION=php82
-
-# Project 5: PHP 8.1 (legacy)
-PHPVERSION=php81
 ```
 
 ### Tip 3b: Different Database Versions

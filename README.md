@@ -65,7 +65,7 @@ All configuration is done via the `.env` file (created by `init.sh`):
 # Project name (must be unique per project)
 COMPOSE_PROJECT_NAME=lamp
 
-# PHP version (php8, php81, php82, php83, php84, php85)
+# PHP version (php82, php83, php84, php85)
 PHPVERSION=php83
 
 # Database (mysql8, mysql84, mariadb103-106, mariadb1011, mariadb118, mariadb121)
@@ -88,7 +88,7 @@ USE_REVERSE_PROXY=false  # false=ports, true=domains
 
 ```bash
 # Edit .env
-PHPVERSION=php81  # or php8, php81, php82, php83, php84, php85
+PHPVERSION=php84  # or php82, php83, php84, php85
 
 # Rebuild and restart
 docker compose down
