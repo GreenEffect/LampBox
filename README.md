@@ -6,7 +6,7 @@
 
 Modern, cross-platform LAMP development environment with Docker.
 
-![PHP](https://img.shields.io/badge/PHP-8.0%20to%208.5-777BB4?logo=php)
+![PHP](https://img.shields.io/badge/PHP-8.2%20to%208.5-777BB4?logo=php)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0%2C%208.4-4479A1?logo=mysql)
 ![MariaDB](https://img.shields.io/badge/MariaDB-10.3--12.1-003545?logo=mariadb)
 ![Apache](https://img.shields.io/badge/Apache-2.4-D22128?logo=apache)
@@ -14,7 +14,7 @@ Modern, cross-platform LAMP development environment with Docker.
 
 ## ✨ Features
 
-- 🚀 **Multiple PHP versions** (8.0, 8.1, 8.2, 8.3, 8.4, 8.5)
+- 🚀 **Multiple PHP versions** (8.2, 8.3, 8.4, 8.5)
 - 💾 **Multiple databases** (MySQL 8.0, 8.4, MariaDB 10.3-10.6, 10.11, 11.8, 12.1)
 - 🔒 **HTTPS/SSL** support with auto-generated certificates
 - 🎯 **Dual access modes**: Direct ports or shared reverse proxy (Traefik, multi-project)
@@ -450,7 +450,7 @@ See [CHANGELOG.md](CHANGELOG.md) for full history.
 
 ## 📦 Docker Images Used
 
-- **PHP**: Custom builds from `php:8.0-apache` to `php:8.5-apache`
+- **PHP**: Custom builds from `php:8.2-apache-bookworm` to `php:8.5-apache-bookworm`
 - **MySQL**: `mysql:8.0`, `mysql:8.4`
 - **MariaDB**: `mariadb:10.3` to `mariadb:10.6`, `mariadb:10.11`, `mariadb:11.8`, `mariadb:12.1`
 - **Traefik**: `traefik:v3.6` (shared reverse proxy)
