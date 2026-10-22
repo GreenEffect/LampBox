@@ -4,7 +4,7 @@
 
 # 🐳 LampBox v2.3.0
 
-Modern, cross-platform LAMP development environment with Docker.
+Modern, cross-platform LAMP stack with Docker, for local development and production.
 
 ![PHP](https://img.shields.io/badge/PHP-8.2%20to%208.5-777BB4?logo=php)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0%2C%208.4-4479A1?logo=mysql)
@@ -19,6 +19,7 @@ Modern, cross-platform LAMP development environment with Docker.
 - 🔒 **HTTPS/SSL** support with auto-generated certificates
 - 🎯 **Dual access modes**: Direct ports or shared reverse proxy (Traefik, multi-project)
 - 🔧 **phpMyAdmin** included and pre-configured
+- 🔐 **Production mode**: hardened PHP settings, protected phpMyAdmin, safe PHP updates and consistent database dumps
 - 🌍 **Cross-platform**: Linux, macOS, Windows (Git Bash/WSL2/CMD)
 - 📦 **Isolated projects**: Run multiple LAMP stacks simultaneously
 - ⚡ **Auto-configuration**: Permissions and secrets handled automatically
