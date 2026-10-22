@@ -52,9 +52,7 @@ proxy-down: ## Stop the shared Traefik reverse proxy
 	@./lamp.sh proxy-down
 
 stop: ## Stop the stack
-	@echo "$(YELLOW)Stopping LampBox...$(NC)"
-	@docker compose -f docker-compose.yml down
-	@echo "$(GREEN)✓ Stack stopped$(NC)"
+	@./lamp.sh stop
 
 restart: stop start ## Restart the stack
 
@@ -101,35 +99,8 @@ ssl: ## Generate the shared Traefik TLS certificate (*.local)
 
 ##@ Information
 
-info: ## Show connection information
-	@echo ""
-	@echo "$(BLUE)===================================================================$(NC)"
-	@echo "$(BLUE)Connection Information$(NC)"
-	@echo "$(BLUE)===================================================================$(NC)"
-	@echo ""
-	@echo "$(GREEN)Project:$(NC) $(COMPOSE_PROJECT_NAME)"
-	@echo "$(GREEN)PHP Version:$(NC) $(PHPVERSION)"
-	@echo "$(GREEN)Database:$(NC) $(DATABASE)"
-	@echo ""
-	@if [ "$(USE_REVERSE_PROXY)" = "true" ]; then \
-		echo "$(GREEN)Website:$(NC) https://$(PROJECT_DOMAIN)"; \
-		echo "$(GREEN)phpMyAdmin:$(NC) https://$(PROJECT_DOMAIN)/$(COMPOSE_PROJECT_NAME)-mysql"; \
-	else \
-		echo "$(GREEN)Website (HTTP):$(NC) http://localhost:$(HTTP_PORT)"; \
-		echo "$(GREEN)Website (HTTPS):$(NC) https://localhost:$(HTTPS_PORT)"; \
-		echo "$(GREEN)phpMyAdmin:$(NC) http://localhost:$(HTTP_PORT)/$(COMPOSE_PROJECT_NAME)-mysql"; \
-	fi
-	@if [ -n "$(MYSQL_PORT)" ]; then \
-		echo "$(GREEN)MySQL:$(NC) localhost:$(MYSQL_PORT)"; \
-	fi
-	@echo ""
-	@echo "$(BLUE)Database Credentials:$(NC)"
-	@echo "  Host: $(COMPOSE_PROJECT_NAME)-database"
-	@echo "  Root Password: $(MYSQL_ROOT_PASSWORD)"
-	@echo "  Database: $(MYSQL_DATABASE)"
-	@echo "  User: $(MYSQL_USER)"
-	@echo "  Password: $(MYSQL_PASSWORD)"
-	@echo ""
+info: ## Show connection information (environment, phpMyAdmin rule, credentials)
+	@./lamp.sh info
 
 ##@ Development
 
