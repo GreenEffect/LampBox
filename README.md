@@ -2,7 +2,7 @@
   <img src="docs/LampBox_Logo.png" alt="LampBox Logo" width="200">
 </div>
 
-# 🐳 LampBox v2.2.0
+# 🐳 LampBox v2.3.0
 
 Modern, cross-platform LAMP development environment with Docker.
 
@@ -402,7 +402,16 @@ Also for production:
 Updating a project created with an older LampBox: see the
 [Migration Guide](docs/MIGRATION.md).
 
-## 🆚 What's New in v2.2.0
+## 🆚 What's New in v2.3.0
+
+### Version 2.3.0 (2026-10-22)
+- ✅ **Production mode** (`LAMPBOX_ENV=production`): PHP errors hidden, Xdebug off, no `X-Powered-By`, phpMyAdmin denied by default
+- ✅ phpMyAdmin access configurable (`PHPMYADMIN_REQUIRE`), root login disabled, real client IP behind Traefik
+- ✅ New `./lamp.sh update`: apply a PHP security release to the webserver only, with rollback image
+- ✅ New `./lamp.sh dump`: consistent database dumps with rotation; passwords no longer on the command line
+- ✅ `./lamp.sh rebuild` now pulls updated base images
+- ✅ php82 follows `php:8.2-apache-bookworm`; PHP 8.0 and 8.1 removed (end of life)
+- ✅ New [Migration Guide](docs/MIGRATION.md) for projects created with older versions
 
 ### Version 2.2.0 (2026-07-15)
 - ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance

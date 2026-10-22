@@ -1,6 +1,6 @@
 # 🔧 Troubleshooting Guide
 
-Common issues and solutions for LampBox v2.2.0.
+Common issues and solutions for LampBox v2.3.0.
 
 ## 📑 Table of Contents
 

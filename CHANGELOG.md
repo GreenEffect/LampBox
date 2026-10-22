@@ -1,5 +1,23 @@
 # Changelog - LampBox
 
+### 2.3.0 - 2026-10-22
+Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
+
+✅ **Production mode**: `LAMPBOX_ENV=production` applies `docker-compose.production.yml` and `config/php/php-production.ini` (errors logged but not displayed, Xdebug off, `expose_php` off, strict HttpOnly sessions); an invalid value stops `lamp.sh`  
+✅ **phpMyAdmin**: access rule set by `PHPMYADMIN_REQUIRE` (`all granted` in development, `all denied` in production, or e.g. `ip 203.0.113.10`); root login disabled (`AllowRoot = false`); updated from 5.2.1 to 5.2.3  
+✅ Reverse proxy mode mounts `config/apache/remoteip.conf` so Apache sees the real client IP (logs and IP rules); never applied in direct port mode  
+✅ `session.upload_progress.enabled = Off` in both php.ini files (recommended by GHSA-6wmf-4rv5-p3rp even after patching); `#` comments replaced by `;`  
+✅ New `./lamp.sh update` (`make update`): pulls the latest PHP image, rebuilds and recreates the webserver only, checks the PHP version and keeps `<image>:pre-update` for a rollback  
+✅ New `./lamp.sh dump`: consistent dump to `data/db-dumps/` with integrity check and rotation (`DB_DUMP_KEEP`); `make db-backup` uses it, `make db-restore` accepts `.sql.gz`  
+✅ Database passwords are read from the container environment (`MYSQL_PWD`) instead of `-p<password>` (visible in `ps`, altered by `$`); `./lamp.sh mysql` also works with recent MariaDB images  
+✅ Fixed `./lamp.sh rebuild` never picking up PHP security releases: it now builds with `--pull` (and uses the project compose files)  
+✅ `bin/php82` follows `php:8.2-apache-bookworm` instead of the pinned `php:8.2.1-apache-buster`  
+✅ Pinned PECL extensions for PHP 8.5 (xdebug 3.5.3, redis 6.3.0, imagick 3.8.1)  
+✅ Removed end-of-life PHP 8.0 (`php8`) and 8.1 (`php81`)  
+✅ Removed the `test/` scripts; fixed `dev_build_container.sh` turning `PHPVERSION=php83` into `php823`  
+✅ `sample.env` documents single-quoting values that contain `$`  
+✅ New `docs/MIGRATION.md` for projects created with older versions (data directory, database port, PHP versions, production mode, backups)
+
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  
 ✅ Multiple projects now run in parallel behind one proxy — fixes `Bind for 0.0.0.0:80 failed: port is already allocated`  
