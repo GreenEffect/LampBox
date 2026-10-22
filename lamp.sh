@@ -245,6 +245,10 @@ start() {
     print_header "Starting LampBox: $COMPOSE_PROJECT_NAME"
     print_info "Environment: ${LAMPBOX_ENV:-development}"
 
+    # up --build: the images always match PHPVERSION and DATABASE (each image
+    # name is fixed per project, so a plain "up" would keep the previous engine).
+    # Unchanged images come from the build cache.
+
     if [ "$1" = "--proxy" ] || [ "$1" = "-p" ] || [ "$USE_REVERSE_PROXY" = "true" ]; then
         print_info "Starting with reverse proxy mode (Traefik)..."
 
@@ -252,14 +256,14 @@ start() {
         ensure_proxy
 
         local COMPOSE_CMD=($(compose_files))
-        "${COMPOSE_CMD[@]}" up -d
+        "${COMPOSE_CMD[@]}" up -d --build
         print_info "✓ Stack started behind Traefik"
         print_info "Access your site at: https://$PROJECT_DOMAIN"
         print_warning "Make sure '$PROJECT_DOMAIN' points to 127.0.0.1 in your hosts file."
     else
         print_info "Starting in direct port mode..."
         local COMPOSE_CMD=($(compose_files))
-        "${COMPOSE_CMD[@]}" up -d
+        "${COMPOSE_CMD[@]}" up -d --build
         print_info "✓ Stack started"
         print_info "Access your site at: http://localhost:$HTTP_PORT"
     fi

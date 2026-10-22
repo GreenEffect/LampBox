@@ -113,13 +113,20 @@ as `<project>-webserver:pre-update` for a rollback. A plain
 ### Switching Database
 
 ```bash
+# Keep a dump of the current data
+./lamp.sh dump
+
 # Edit .env
 DATABASE=mariadb105  # or mysql8, mysql84, mariadb103-106, mariadb1011, mariadb118, mariadb121
 
-# Clean database and restart
-./lamp.sh clean-db
-docker compose up -d
+# Restart: each engine uses its own directory (data/mysql-<DATABASE>), so the
+# new one starts empty and the previous data stays untouched
+./lamp.sh restart
 ```
+
+Then import your application databases from the dump if needed. With a custom
+`MYSQL_DATA_DIR` shared by several engines, run `./lamp.sh clean-db` before
+switching: `lamp.sh` refuses to start an engine on data created by another one.
 
 ## 🛠️ Management Commands
 
