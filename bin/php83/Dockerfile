@@ -107,7 +107,7 @@ RUN apt-get update && \
     apt-get install -y unzip
 
 # Install phpMyAdmin
-ARG PHPMYADMIN_VERSION=5.2.1
+ARG PHPMYADMIN_VERSION=5.2.3
 RUN wget https://files.phpmyadmin.net/phpMyAdmin/${PHPMYADMIN_VERSION}/phpMyAdmin-${PHPMYADMIN_VERSION}-all-languages.zip -O /tmp/phpmyadmin.zip && \
     unzip /tmp/phpmyadmin.zip -d /opt/ && \
     mv /opt/phpMyAdmin-${PHPMYADMIN_VERSION}-all-languages /opt/phpmyadmin && \

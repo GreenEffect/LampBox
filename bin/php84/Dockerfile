@@ -107,7 +107,8 @@ RUN apt-get update && \
     apt-get install -y unzip
 
 # Install phpMyAdmin
-ARG PHPMYADMIN_VERSION=5.2.1
+# 5.2.3 officially supports PHP < 8.4 but runs on 8.4/8.5 (deprecation notices only)
+ARG PHPMYADMIN_VERSION=5.2.3
 RUN wget https://files.phpmyadmin.net/phpMyAdmin/${PHPMYADMIN_VERSION}/phpMyAdmin-${PHPMYADMIN_VERSION}-all-languages.zip -O /tmp/phpmyadmin.zip && \
     unzip /tmp/phpmyadmin.zip -d /opt/ && \
     mv /opt/phpMyAdmin-${PHPMYADMIN_VERSION}-all-languages /opt/phpmyadmin && \
