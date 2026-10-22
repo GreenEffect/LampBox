@@ -229,6 +229,7 @@ show_summary() {
         echo -e "${BLUE}Project:${NC} $COMPOSE_PROJECT_NAME"
         echo -e "${BLUE}PHP Version:${NC} $PHPVERSION"
         echo -e "${BLUE}Database:${NC} $DATABASE"
+        echo -e "${BLUE}Environment:${NC} ${LAMPBOX_ENV:-development}"
         echo -e "${BLUE}Reverse Proxy:${NC} $USE_REVERSE_PROXY"
         
         if [ "$OS" != "Windows" ]; then
@@ -282,7 +283,7 @@ show_next_steps() {
         echo -e "   ${YELLOW}https://$PROJECT_DOMAIN${NC}"
     else
         echo "2. Start your stack:"
-        echo -e "   ${YELLOW}docker compose up -d${NC}"
+        echo -e "   ${YELLOW}./lamp.sh start${NC}"
         echo ""
         echo "3. Access your site:"
         echo -e "   ${YELLOW}http://localhost:$HTTP_PORT${NC}"
