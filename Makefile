@@ -3,8 +3,8 @@
 
 .PHONY: help init check start stop restart status logs shell mysql rebuild update clean ssl info start-proxy proxy-up proxy-down
 
-# Load environment variables
-include .env
+# Load environment variables (optional: 'make init' creates .env)
+-include .env
 export
 
 # Default target
