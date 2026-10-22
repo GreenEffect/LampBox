@@ -201,7 +201,8 @@ MYSQL_PASSWORD=mypassword
 ```bash
 # In .env: hide PHP errors, turn Xdebug off, deny phpMyAdmin
 LAMPBOX_ENV=production
-PHPMYADMIN_REQUIRE=        # empty = "all denied"; or e.g. "ip 203.0.113.10"
+PHPMYADMIN_REQUIRE=        # empty = "all denied"
+#PHPMYADMIN_REQUIRE='ip 203.0.113.10'   # or allow your IP (keep the quotes)
 ```
 
 ---

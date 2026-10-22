@@ -200,7 +200,7 @@ docker compose ps webserver
 **"Forbidden" (403):** access is restricted by `PHPMYADMIN_REQUIRE`, which
 defaults to `all denied` when `LAMPBOX_ENV=production`. Check the effective
 rule with `./lamp.sh info`, then allow your IP in `.env`
-(`PHPMYADMIN_REQUIRE=ip 203.0.113.10`) and run `./lamp.sh restart`.
+(`PHPMYADMIN_REQUIRE='ip 203.0.113.10'`, quotes included) and run `./lamp.sh restart`.
 
 ### phpMyAdmin Login Fails
 

@@ -303,7 +303,7 @@ Xdebug is included (develop mode by default, turned off with
 **Via phpMyAdmin:**
 - URL: `http://localhost:8080/lamp-mysql`
 - User: `docker` / Pass: `docker` (root login is disabled)
-- Access is controlled by `PHPMYADMIN_REQUIRE` in `.env` (e.g. `ip 203.0.113.10`);
+- Access is controlled by `PHPMYADMIN_REQUIRE` in `.env` (e.g. `PHPMYADMIN_REQUIRE='ip 203.0.113.10'`, quotes included);
   denied by default in production
 
 **Via CLI:**
@@ -387,7 +387,8 @@ set in `.env`:
 
 ```bash
 LAMPBOX_ENV=production
-PHPMYADMIN_REQUIRE=            # empty = "all denied"; or e.g. "ip 203.0.113.10"
+PHPMYADMIN_REQUIRE=            # empty = "all denied"
+#PHPMYADMIN_REQUIRE='ip 203.0.113.10'   # or allow your IP (keep the quotes)
 ```
 
 `lamp.sh` then applies `docker-compose.production.yml`:

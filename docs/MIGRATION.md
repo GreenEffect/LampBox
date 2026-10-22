@@ -85,8 +85,8 @@ Then review:
 | `DATABASE` | `mysql8`, `mariadb103`-`mariadb106` and `mariadb121` are no longer provided (see step 4) |
 | `MYSQL_PORT` | Leave empty unless a client on the host needs the database (it is no longer published by default) |
 | `LAMPBOX_ENV` | `production` for a public site (see step 6) |
-| `PHPMYADMIN_REQUIRE` | Who may open phpMyAdmin, e.g. `ip 203.0.113.10` |
-| Passwords containing `$` | Put them between single quotes: `MYSQL_PASSWORD='abc$xyz'` |
+| `PHPMYADMIN_REQUIRE` | Who may open phpMyAdmin, e.g. `PHPMYADMIN_REQUIRE='ip 203.0.113.10'` (quotes included) |
+| Values containing `$` or spaces | Put them between single quotes: `MYSQL_PASSWORD='abc$xyz'` |
 
 ## 4. Move Off Unsupported Versions
 
@@ -157,7 +157,8 @@ For a site exposed on the Internet:
 
 ```bash
 LAMPBOX_ENV=production
-PHPMYADMIN_REQUIRE=            # empty = "all denied"; or e.g. "ip 203.0.113.10"
+PHPMYADMIN_REQUIRE=            # empty = "all denied"
+#PHPMYADMIN_REQUIRE='ip 203.0.113.10'   # or allow your IP (keep the quotes)
 ```
 
 This hides PHP errors from visitors (they go to the Apache error log), turns

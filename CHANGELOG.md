@@ -4,7 +4,7 @@
 Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 
 ✅ **Production mode**: `LAMPBOX_ENV=production` applies `docker-compose.production.yml` and `config/php/php-production.ini` (errors logged but not displayed, Xdebug off, `expose_php` off, strict HttpOnly sessions); an invalid value stops `lamp.sh`  
-✅ **phpMyAdmin**: access rule set by `PHPMYADMIN_REQUIRE` (`all granted` in development, `all denied` in production, or e.g. `ip 203.0.113.10`); root login disabled (`AllowRoot = false`); updated from 5.2.1 to 5.2.3  
+✅ **phpMyAdmin**: access rule set by `PHPMYADMIN_REQUIRE` (`all granted` in development, `all denied` in production, or e.g. `PHPMYADMIN_REQUIRE='ip 203.0.113.10'`); root login disabled (`AllowRoot = false`); updated from 5.2.1 to 5.2.3  
 ✅ Reverse proxy mode mounts `config/apache/remoteip.conf` so Apache sees the real client IP (logs and IP rules); never applied in direct port mode  
 ✅ `session.upload_progress.enabled = Off` in both php.ini files (recommended by GHSA-6wmf-4rv5-p3rp even after patching); `#` comments replaced by `;`  
 ✅ New `./lamp.sh update` (`make update`): pulls the latest PHP image, rebuilds and recreates the webserver only, checks the PHP version and keeps a `-pre-update` copy of the image for a rollback  
@@ -27,7 +27,8 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ Fixed `./lamp.sh start --proxy` (and `make start-proxy`) starting Traefik without applying `docker-compose.proxy.yml` when `USE_REVERSE_PROXY=false`  
 ✅ `make stop` and `make info` go through `lamp.sh` (overrides, environment, phpMyAdmin rule); `init.sh` suggests `./lamp.sh start` and shows the environment  
 ✅ `dev_build_container.sh` rewritten: Docker Compose v2, isolated projects in `./buildtest/` (the project's data is never touched), mysqli and PDO checked from PHP instead of a missing test page, full cleanup and a summary exit code  
-✅ `lamp.sh` help shows colors instead of raw `\033` codes; the `Makefile` works without `.env` (`make init`, `make help`)
+✅ `lamp.sh` help shows colors instead of raw `\033` codes; the `Makefile` works without `.env` (`make init`, `make help`)  
+✅ `lamp.sh` and `init.sh` report an `.env` that bash cannot load (e.g. an unquoted value with spaces) with the faulty line, instead of failing with "command not found"
 
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  

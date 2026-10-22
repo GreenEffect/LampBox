@@ -53,6 +53,18 @@ command_exists() {
     command -v "$1" &> /dev/null
 }
 
+# Load .env. It is sourced by bash: an unquoted value with spaces runs as a
+# command, so check it first and point to the faulty line.
+load_env() {
+    local err
+    if ! err=$(bash -ec "source ./.env" 2>&1 >/dev/null); then
+        print_error ".env could not be loaded: ${err%%$'\n'*}"
+        print_error "Quote values that contain spaces, e.g. PHPMYADMIN_REQUIRE='ip 203.0.113.10'"
+        exit 1
+    fi
+    source .env
+}
+
 # Check prerequisites
 check_prerequisites() {
     print_header "Checking prerequisites"
@@ -158,7 +170,7 @@ create_directories() {
     print_header "Creating directories"
 
     # Database directories, with the same defaults as docker-compose.yml
-    source .env
+    load_env
     MYSQL_DATA_DIR="${MYSQL_DATA_DIR:-./data/mysql-${DATABASE}}"
     MYSQL_LOG_DIR="${MYSQL_LOG_DIR:-./logs/mysql-${DATABASE}}"
 
@@ -223,7 +235,7 @@ show_summary() {
     
     # Load .env to show current config
     if [ -f .env ]; then
-        source .env
+        load_env
         
         echo -e "${BLUE}Operating System:${NC} $OS"
         echo -e "${BLUE}Project:${NC} $COMPOSE_PROJECT_NAME"
@@ -251,7 +263,7 @@ show_summary() {
 show_next_steps() {
     print_header "Next Steps"
     
-    source .env
+    load_env
     
     echo "1. Review and customize your .env file if needed:"
     if [ "$OS" = "Windows" ]; then

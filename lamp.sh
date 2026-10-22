@@ -28,6 +28,13 @@ check_env() {
         print_info "Run './init.sh' first to initialize your environment."
         exit 1
     fi
+    # .env is sourced by bash: an unquoted value with spaces runs as a command
+    local err
+    if ! err=$(bash -ec "source ./.env" 2>&1 >/dev/null); then
+        print_error ".env could not be loaded: ${err%%$'\n'*}"
+        print_error "Quote values that contain spaces, e.g. PHPMYADMIN_REQUIRE='ip 203.0.113.10'"
+        exit 1
+    fi
     source .env
 
     # A typo must not silently run development settings in production
