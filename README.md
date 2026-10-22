@@ -110,7 +110,7 @@ The PHP images follow the latest patch release of their branch (e.g.
 
 It pulls the new base image, shows the running and new PHP versions, recreates
 **only** the webserver (the database is untouched) and keeps the previous image
-as `<project>-webserver:pre-update` for a rollback. A plain
+as `<project>-webserver:<PHPVERSION>-pre-update` for a rollback. A plain
 `docker compose up -d --build` does **not** pull a newer base image.
 
 ### Switching Database

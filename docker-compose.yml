@@ -6,6 +6,8 @@ services:
         USER_ID: ${USER_ID:-1000}
         GROUP_ID: ${GROUP_ID:-1000}
         COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    # One image per PHP version: switching PHPVERSION never reuses another one
+    image: "${COMPOSE_PROJECT_NAME}-webserver:${PHPVERSION}"
     # User mapping: Only applied on Linux/Mac, ignored on Windows
     user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
     container_name: "${COMPOSE_PROJECT_NAME}-webserver"
@@ -42,6 +44,8 @@ services:
   database:
     build:
       context: "./bin/${DATABASE}"
+    # One image per engine: switching DATABASE never reuses another engine
+    image: "${COMPOSE_PROJECT_NAME}-database:${DATABASE}"
     container_name: "${COMPOSE_PROJECT_NAME}-database"
     restart: unless-stopped
     # No host port by default, so several projects can run in parallel.

@@ -7,7 +7,7 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ **phpMyAdmin**: access rule set by `PHPMYADMIN_REQUIRE` (`all granted` in development, `all denied` in production, or e.g. `ip 203.0.113.10`); root login disabled (`AllowRoot = false`); updated from 5.2.1 to 5.2.3  
 ✅ Reverse proxy mode mounts `config/apache/remoteip.conf` so Apache sees the real client IP (logs and IP rules); never applied in direct port mode  
 ✅ `session.upload_progress.enabled = Off` in both php.ini files (recommended by GHSA-6wmf-4rv5-p3rp even after patching); `#` comments replaced by `;`  
-✅ New `./lamp.sh update` (`make update`): pulls the latest PHP image, rebuilds and recreates the webserver only, checks the PHP version and keeps `<image>:pre-update` for a rollback  
+✅ New `./lamp.sh update` (`make update`): pulls the latest PHP image, rebuilds and recreates the webserver only, checks the PHP version and keeps a `-pre-update` copy of the image for a rollback  
 ✅ New `./lamp.sh dump`: consistent dump to `data/db-dumps/` with integrity check and rotation (`DB_DUMP_KEEP`); `make db-backup` uses it, `make db-restore` accepts `.sql.gz`  
 ✅ Database passwords are read from the container environment (`MYSQL_PWD`) instead of `-p<password>` (visible in `ps`, altered by `$`); `./lamp.sh mysql` also works with recent MariaDB images  
 ✅ Fixed `./lamp.sh rebuild` never picking up PHP security releases: it now builds with `--pull` (and uses the project compose files)  
@@ -19,7 +19,7 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ New `docs/MIGRATION.md` for projects created with older versions (data directory, database port, PHP versions, production mode, backups)  
 ✅ Shell scripts are now executable (`./init.sh`, `./lamp.sh` failed with "Permission denied" on a fresh clone)  
 ✅ Fixed `lamp.sh` (start check, `clean`, `clean-db`) and `init.sh` targeting `data/mysql` instead of the configured `MYSQL_DATA_DIR` (default `data/mysql-<DATABASE>`); `clean-db` now deletes through a database container (the files belong to the container's mysql user) and no longer recreates a `.gitkeep` that prevented MySQL from initializing; the engine marker is stored next to the data directory and written automatically  
-✅ `./lamp.sh start` builds the images (`up --build`, cached): after changing `DATABASE` or `PHPVERSION`, the previous image was reused and the old engine initialized the new data directory  
+✅ Images are tagged per version (`<project>-webserver:<PHPVERSION>`, `<project>-database:<DATABASE>`) and `./lamp.sh start` builds them (`up --build`, cached): after changing `DATABASE` or `PHPVERSION`, the single per-project image was reused and the old engine initialized the new data directory  
 ✅ Removed end-of-life MariaDB 10.3, 10.4, 10.5 and 10.6 (`mariadb103`-`mariadb106`)  
 ✅ Replaced MariaDB 12.1 (short-term release, end of life 2026-02) with 12.3 LTS (`mariadb123`, supported until 2029-06)  
 ✅ Removed `mysql8`: its `mysql:8` tag already ran MySQL 8.4 (8.0 is end of life since 2026-04); `DATABASE=mysql84` is the new default  

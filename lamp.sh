@@ -245,9 +245,9 @@ start() {
     print_header "Starting LampBox: $COMPOSE_PROJECT_NAME"
     print_info "Environment: ${LAMPBOX_ENV:-development}"
 
-    # up --build: the images always match PHPVERSION and DATABASE (each image
-    # name is fixed per project, so a plain "up" would keep the previous engine).
-    # Unchanged images come from the build cache.
+    # Images are tagged per PHPVERSION and DATABASE (docker-compose.yml), so a
+    # switch never reuses another version's image. up --build also applies
+    # Dockerfile changes; unchanged images come from the build cache.
 
     # --proxy must also make compose_files() add docker-compose.proxy.yml
     if [ "$1" = "--proxy" ] || [ "$1" = "-p" ]; then
@@ -373,9 +373,14 @@ update() {
     fi
 
     local COMPOSE_CMD=($(compose_files))
-    # 'config --images' lists every service image (webserver + database)
-    local image
-    image=$("${COMPOSE_CMD[@]}" config --images | grep -- '-webserver$' | head -n 1)
+    # 'config --images' lists every service image (webserver + database),
+    # e.g. lamp-webserver:php83
+    local image backup
+    image=$("${COMPOSE_CMD[@]}" config --images | grep -E -- '-webserver(:|$)' | head -n 1)
+    case "$image" in
+        *:*) backup="$image-pre-update" ;;
+        *)   backup="$image:pre-update" ;;
+    esac
     local container="${COMPOSE_PROJECT_NAME}-webserver"
 
     print_header "Updating webserver: $COMPOSE_PROJECT_NAME"
@@ -387,8 +392,8 @@ update() {
 
     # Keep the current image for a rollback
     if docker image inspect "$image" >/dev/null 2>&1; then
-        docker tag "$image" "$image:pre-update"
-        print_info "Current image saved as $image:pre-update"
+        docker tag "$image" "$backup"
+        print_info "Current image saved as $backup"
     fi
 
     "${COMPOSE_CMD[@]}" build --pull webserver
@@ -415,7 +420,7 @@ update() {
         exit 1
     fi
     print_info "✓ Webserver now runs PHP $running"
-    print_info "Rollback: docker tag $image:pre-update $image && ${COMPOSE_CMD[*]} up -d --no-deps webserver"
+    print_info "Rollback: docker tag $backup $image && ${COMPOSE_CMD[*]} up -d --no-deps webserver"
 }
 
 # Dump all databases to data/db-dumps/<project>-<date>.sql.gz.

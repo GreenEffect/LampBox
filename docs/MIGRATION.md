@@ -186,6 +186,11 @@ docker port <project>-database                         # empty unless MYSQL_PORT
 curl -sI https://your-site | grep -i x-powered-by      # nothing in production
 ```
 
+The new compose file tags images per version (`<project>-webserver:php83`,
+`<project>-database:mysql84`). The previous `<project>-webserver` and
+`<project>-database` images are no longer used: remove them once the site is
+checked.
+
 **Rollback**: restore `.env` and `docker-compose.yml` from the backups, then
 `docker tag <project>-webserver:pre-migration <project>-webserver` and
 `docker compose up -d --no-deps webserver`.
