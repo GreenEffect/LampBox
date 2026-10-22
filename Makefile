@@ -77,12 +77,8 @@ mysql: ## Open MySQL shell
 
 ##@ Maintenance
 
-rebuild: ## Rebuild all containers from scratch
-	@echo "$(YELLOW)Rebuilding LampBox...$(NC)"
-	@docker compose -f docker-compose.yml down
-	@docker compose build --no-cache
-	@echo "$(GREEN)✓ Rebuild complete$(NC)"
-	@make start
+rebuild: ## Rebuild all containers from scratch (pulls updated base images)
+	@./lamp.sh rebuild
 
 clean: ## Remove all containers, networks, and volumes (⚠️  destructive!)
 	@echo "$(YELLOW)⚠️  WARNING: This will remove all data!$(NC)"

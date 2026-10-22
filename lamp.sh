@@ -272,7 +272,9 @@ rebuild() {
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         local COMPOSE_CMD=($(compose_files))
         "${COMPOSE_CMD[@]}" down
-        docker compose build --no-cache
+        # --pull fetches the latest base images (PHP security releases);
+        # --no-cache alone would rebuild on top of the cached, outdated ones
+        "${COMPOSE_CMD[@]}" build --pull --no-cache
         print_info "✓ Rebuild complete"
         echo ""
         start "$@"
