@@ -24,7 +24,7 @@ Common issues and solutions for LampBox v2.3.0.
 [ERROR] [MY-013236] The designated data directory /var/lib/mysql/ is unusable.
 ```
 
-**Cause:** The `data/mysql/` directory contains residual files preventing MySQL initialization.
+**Cause:** The database data directory (`data/mysql-<DATABASE>/` by default, or `MYSQL_DATA_DIR`) contains residual files preventing MySQL initialization.
 
 **Note:** If you see InnoDB errors such as `Tablespace flags are invalid`, `Corrupted page`, or `Data Dictionary initialization failed`, the local data directory is likely incompatible or corrupted. In that case, `./lamp.sh clean-db` is required before restarting.
 
@@ -40,8 +40,9 @@ docker compose up -d
 # Stop containers
 docker compose down
 
-# Clean MySQL data directory
-rm -rf data/mysql/*
+# Clean the data directory (its files belong to the container's mysql
+# user, so a plain 'rm' from the host usually needs sudo)
+sudo rm -rf data/mysql-<DATABASE>/*
 
 # Restart
 docker compose up -d
@@ -61,8 +62,9 @@ make db-restore FILE=data/db-dumps/<dump>.sql.gz
 ```
 
 **Prevention:**
-- Always use `./lamp.sh clean-db` when switching database versions
-- Don't manually modify files in `data/mysql/`
+- Keep the default per-engine data directory (`data/mysql-<DATABASE>`): switching `DATABASE` then starts on a fresh directory. With a custom `MYSQL_DATA_DIR`, run `./lamp.sh dump` then `./lamp.sh clean-db` before switching engines
+- Don't manually modify files in the database data directory
+- Don't put any file (such as `.gitkeep`) in it: MySQL refuses to initialize a non-empty directory
 - Use `docker compose down` (not `docker compose down -v`) to preserve data
 
 ### MySQL Container Exits Immediately

@@ -27,6 +27,10 @@ MYSQL_DATA_DIR=./data/mysql
 MYSQL_LOG_DIR=./logs/mysql
 ```
 
+On the first `./lamp.sh start`, lamp.sh may ask once whether this data was
+created by your `DATABASE` engine (it cannot tell from a custom directory name),
+then records the answer in `data/mysql.database`.
+
 ---
 
 ## 1. Back Up

@@ -4,8 +4,8 @@
 .env.*.local
 
 # Data directories
-data/mysql/*
-!data/mysql/.gitkeep
+# Database data directories (data/mysql-<DATABASE>/) and their engine markers
+data/mysql*
 data/db-dumps/
 logs/*
 !logs/.gitkeep

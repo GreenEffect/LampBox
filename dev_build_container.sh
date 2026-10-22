@@ -26,7 +26,7 @@ usage() {
 echo "Usage:"
 echo "       -b = build all container variations of specified version"
 echo "            valid values are: php82, php83, php84, php85"
-echo -e " \nAttention: !!! SCRIPT REMOVES ALL DATA IN 'data/mysql/*' !!!"
+echo -e " \nAttention: !!! SCRIPT REMOVES ALL DATA IN 'data/mysql-<database>/*' !!!"
 }
 
 # build stack variations
@@ -37,7 +37,7 @@ build () {
                 # removing old mysql data, old data prevents mysql
                 # from starting correct
                 echo -e "### cleaning old mysql data"
-                rm -rf ./data/mysql/*
+                rm -rf ./data/mysql-"$version"/*
                 echo -e "### building ./buildtarget/$buildtarget-$version.env \n"
                 $dc --env-file ./buildtest/$buildtarget-$version.env up -d --build
                 # wait for mysql to initialize

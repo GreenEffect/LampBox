@@ -81,9 +81,9 @@ echo.
 
 REM Create necessary directories
 if not exist www mkdir www
-if not exist data\mysql mkdir data\mysql
+REM Database dirs (data\mysql-<DATABASE> by default) are created by Docker
+if not exist data mkdir data
 if not exist logs\apache2 mkdir logs\apache2
-if not exist logs\mysql mkdir logs\mysql
 if not exist config\ssl mkdir config\ssl
 if not exist config\initdb mkdir config\initdb
 if not exist traefik\certs mkdir traefik\certs

@@ -156,12 +156,17 @@ create_env_file() {
 # Create necessary directories
 create_directories() {
     print_header "Creating directories"
-    
+
+    # Database directories, with the same defaults as docker-compose.yml
+    source .env
+    MYSQL_DATA_DIR="${MYSQL_DATA_DIR:-./data/mysql-${DATABASE}}"
+    MYSQL_LOG_DIR="${MYSQL_LOG_DIR:-./logs/mysql-${DATABASE}}"
+
     local dirs=(
         "www"
-        "data/mysql"
+        "$MYSQL_DATA_DIR"
         "logs/apache2"
-        "logs/mysql"
+        "$MYSQL_LOG_DIR"
         "config/ssl"
         "config/initdb"
         "traefik/certs"
@@ -186,9 +191,9 @@ set_permissions() {
         print_info "No manual permission configuration needed"
     else
         # Set permissions for Linux/Mac
-        if [ -d "data/mysql" ]; then
-            chmod 755 data/mysql 2>/dev/null || true
-            print_info "✓ Set permissions for data/mysql"
+        if [ -d "$MYSQL_DATA_DIR" ]; then
+            chmod 755 "$MYSQL_DATA_DIR" 2>/dev/null || true
+            print_info "✓ Set permissions for $MYSQL_DATA_DIR"
         fi
         
         if [ -d "www" ]; then

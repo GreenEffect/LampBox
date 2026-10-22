@@ -102,18 +102,30 @@ proxy_down() {
     print_warning "Running projects lose HTTPS routing until Traefik is started again."
 }
 
-mysql_data_exists() {
-    if [ ! -d "data/mysql" ]; then
-        return 1
-    fi
+# Database data directory, with the same default as docker-compose.yml
+mysql_data_dir() {
+    local dir="${MYSQL_DATA_DIR:-./data/mysql-${DATABASE}}"
+    echo "${dir%/}"
+}
 
-    shopt -s nullglob 2>/dev/null
-    local files=(data/mysql/*)
-    shopt -u nullglob
+# Engine marker, stored next to the data directory (e.g. data/mysql-mysql8.database).
+# Never inside it: MySQL refuses to initialize a data directory that has files.
+mysql_engine_marker() {
+    echo "$(mysql_data_dir).database"
+}
+
+mysql_data_exists() {
+    local dir
+    dir=$(mysql_data_dir)
+    [ -d "$dir" ] || return 1
+
+    shopt -s nullglob dotglob 2>/dev/null
+    local files=("$dir"/*)
+    shopt -u nullglob dotglob
 
     for file in "${files[@]}"; do
         case "$(basename "$file")" in
-            .gitkeep|.db_version)
+            .gitkeep)
                 continue
                 ;;
             *)
@@ -126,26 +138,61 @@ mysql_data_exists() {
 }
 
 check_mysql_data() {
-    if mysql_data_exists; then
-        if [ -f "data/mysql/.db_version" ]; then
-            local existing_version
-            existing_version=$(cat data/mysql/.db_version)
-            if [ "$existing_version" != "$DATABASE" ]; then
-                print_error "Existing MySQL data was created for '$existing_version' but current DATABASE is '$DATABASE'."
-                print_error "Run './lamp.sh clean-db' before switching database engines."
-                exit 1
-            fi
-        else
-            print_warning "Existing MySQL data directory contains files and no version marker."
-            print_warning "This may cause startup failures if the data folder is incompatible with '$DATABASE'."
-            read -p "Continue anyway? (y/N): " -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                print_info "Aborting startup. Use './lamp.sh clean-db' to reset the database data."
-                exit 1
-            fi
-        fi
+    local dir marker
+    dir=$(mysql_data_dir)
+    marker=$(mysql_engine_marker)
+
+    # Some engines make the directory unreadable from the host (mode 750):
+    # its content cannot be checked, so leave the marker as it is
+    if [ -d "$dir" ] && { [ ! -r "$dir" ] || [ ! -x "$dir" ]; }; then
+        return
     fi
+
+    if ! mysql_data_exists; then
+        # Fresh directory: it will be initialized by $DATABASE
+        echo "$DATABASE" > "$marker" 2>/dev/null || true
+        return
+    fi
+
+    if [ -f "$marker" ]; then
+        local existing_version
+        existing_version=$(cat "$marker")
+        if [ "$existing_version" != "$DATABASE" ]; then
+            print_error "Database data in '$dir' was created for '$existing_version' but DATABASE is '$DATABASE'."
+            print_error "Switch back DATABASE, or run './lamp.sh dump' then './lamp.sh clean-db'."
+            exit 1
+        fi
+        return
+    fi
+
+    # Default per-engine directory (data/mysql-<DATABASE>): the engine is known
+    if [ "$(basename "$dir")" = "mysql-$DATABASE" ]; then
+        echo "$DATABASE" > "$marker" 2>/dev/null || true
+        return
+    fi
+
+    # Custom MYSQL_DATA_DIR without marker (e.g. projects created before 2.1.0):
+    # ask once, then remember the answer
+    print_warning "'$dir' contains database data of an unknown engine (DATABASE is '$DATABASE')."
+    print_warning "Starting a different engine on it may fail or damage the data."
+    read -p "Is this data from '$DATABASE'? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Aborting startup. Set DATABASE to the engine that created this data."
+        exit 1
+    fi
+    echo "$DATABASE" > "$marker"
+    print_info "Recorded engine in $marker"
+}
+
+# Empty the database data directory. Its files belong to the database user of
+# the container, so they are deleted from a throwaway database container.
+wipe_mysql_data() {
+    local COMPOSE_CMD=($(compose_files))
+    "${COMPOSE_CMD[@]}" stop database >/dev/null 2>&1 || true
+    "${COMPOSE_CMD[@]}" run --rm --no-deps -T --entrypoint sh database \
+        -c 'rm -rf /var/lib/mysql/* /var/lib/mysql/.[!.]* /var/lib/mysql/..?*'
+    rm -f "$(mysql_engine_marker)"
 }
 
 # Show usage
@@ -412,11 +459,13 @@ clean() {
         "${COMPOSE_CMD[@]}" down -v
         print_info "✓ All containers, networks, and volumes removed"
         
-        read -p "Also remove MySQL data directory? (y/N): " -n 1 -r
+        read -p "Also remove the database data in $(mysql_data_dir)? (y/N): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            rm -rf data/mysql/*
-            print_info "✓ MySQL data directory cleaned"
+            wipe_mysql_data
+            # 'run' recreated the project network: remove it again
+            "${COMPOSE_CMD[@]}" down >/dev/null 2>&1 || true
+            print_info "✓ Database data directory cleaned"
         fi
     else
         print_info "Clean cancelled"
@@ -427,24 +476,18 @@ clean() {
 clean_db() {
     check_env
     print_header "Cleaning MySQL Data Directory"
-    print_warning "This will remove ALL database data!"
-    print_warning "Make sure to backup if you have important data!"
+    print_warning "This will remove ALL database data in $(mysql_data_dir)!"
+    print_warning "Make sure to backup if you have important data (./lamp.sh dump)!"
     echo ""
     print_info "Use this if MySQL won't start due to 'data directory has files' error"
     echo ""
     read -p "Remove all MySQL data? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        # Stop database container if running
-        docker compose stop database 2>/dev/null || true
-        
-        # Clean data directory
-        rm -rf data/mysql/*
-        print_info "✓ MySQL data directory cleaned"
-        
-        # Keep .gitkeep if exists
-        touch data/mysql/.gitkeep 2>/dev/null || true
-        
+        # Stops the database container, then empties the directory
+        wipe_mysql_data
+        print_info "✓ Database data directory cleaned"
+
         echo ""
         print_info "You can now start fresh with: ./lamp.sh start"
     else
