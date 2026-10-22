@@ -2,7 +2,6 @@
 .env
 .env.local
 .env.*.local
-.env.test.*
 
 # Data directories
 data/mysql/*

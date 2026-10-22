@@ -584,25 +584,6 @@ cd ~/projects/project2 && ./lamp.sh start
 
 ---
 
-## 🧪 Testing Your Configuration
-
-Before deploying, you can test your configuration using the test scripts:
-
-```bash
-cd test/
-./test-config.sh php83 mysql8 9000 9300
-```
-
-This will:
-- Create a test environment with your specified PHP and database versions
-- Start containers on non-conflicting ports
-- Verify everything works correctly
-- Generate logs for debugging
-
-See [test/README.md](../test/README.md) for complete documentation.
-
-**Note for Windows users:** These scripts require Git Bash or WSL2. See the [Windows Guide](WINDOWS.md) for setup instructions.
-
 ## 📚 More Examples Needed?
 
 Open an issue or pull request to add more examples!

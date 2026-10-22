@@ -228,17 +228,6 @@ HTTP_PORT=8081
 
 ---
 
-## 🧪 Testing Different Configurations
-
-Want to test different PHP or database versions? Use the test scripts:
-
-```bash
-cd test/
-./test-config.sh php85 mariadb121 9000 9300
-```
-
-**Note for Windows users:** These scripts require Git Bash or WSL2. See [test/README.md](../test/README.md) for details.
-
 ## 📚 Need More Help?
 
 Read the full README.md for detailed documentation:

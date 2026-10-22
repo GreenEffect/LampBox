@@ -238,7 +238,6 @@ LampBox/
 │   └── mysql/               # MySQL logs
 ├── www/                      # Your web files (document root)
 ├── docs/                     # Documentation
-├── test/                     # Test scripts for configurations
 ├── docker-compose.yml        # Base stack (webserver + database)
 ├── docker-compose.proxy.yml  # Reverse proxy override (Traefik labels)
 ├── docker-compose.mysql-port.yml # Publishes the DB port (if MYSQL_PORT is set)
@@ -249,39 +248,6 @@ LampBox/
 ├── generate-ssl-certs.sh    # SSL cert generator (direct Apache HTTPS)
 └── check-system.sh          # System requirements checker
 ```
-
-## 🧪 Testing Scripts
-
-The project includes test scripts in the `test/` directory to verify different PHP and database configurations.
-
-### Quick Test
-
-```bash
-# Test a specific PHP + Database combination
-cd test/
-./test-config.sh php85 mariadb121 9000 9300
-```
-
-**Arguments:**
-1. PHP version (php8, php81, php82, php83, php84, php85)
-2. Database version (mysql8, mysql84, mariadb103-106, mariadb1011, mariadb118, mariadb121)
-3. HTTP port (e.g., 9000)
-4. MySQL port (e.g., 9300)
-
-### Cleanup
-
-```bash
-# Remove all test, logs, .env and containers
-cd test/
-./cleanup.sh
-```
-
-**Note for Windows users:** These scripts are bash scripts (`.sh`). You need to use:
-- **Git Bash** (recommended): Right-click → "Git Bash Here", then run the scripts
-- **WSL2**: Use Ubuntu terminal
-- The scripts cannot be run directly in Windows CMD or PowerShell
-
-See [test/README.md](test/README.md) for detailed documentation.
 
 ## 🔧 Development Tools
 
