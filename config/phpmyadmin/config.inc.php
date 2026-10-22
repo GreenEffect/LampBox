@@ -13,5 +13,8 @@ $cfg['UploadDir'] = '';
 $cfg['SaveDir'] = '';
 $cfg['ExecTimeLimit'] = 300;
 
-/* Désactiver la vérification des permissions (développement local uniquement) */
+/* Vérification des permissions désactivée : ce fichier est monté depuis l'hôte
+   et peut y apparaître accessible en écriture à tous (montages Windows / Docker
+   Desktop), ce qui bloquerait phpMyAdmin. Sur un serveur, gardez-le non
+   modifiable par les autres utilisateurs : chmod 644 config/phpmyadmin/config.inc.php */
 $cfg['CheckConfigurationPermissions'] = false;
