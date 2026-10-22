@@ -556,17 +556,17 @@ PHPVERSION=php82
 
 ### Tip 3b: Different Database Versions
 ```bash
-# Latest MySQL
+# MySQL LTS (8.4 is the most widely supported by PHP applications)
 DATABASE=mysql84
 
-# Latest MariaDB
+# Latest MySQL LTS
+DATABASE=mysql97
+
+# Latest MariaDB LTS
 DATABASE=mariadb123
 
-# Stable MariaDB
+# Other MariaDB LTS: mariadb118, mariadb114, mariadb1011
 DATABASE=mariadb118
-
-# Older MariaDB
-DATABASE=mariadb1011
 ```
 
 ### Tip 4: Resource Optimization

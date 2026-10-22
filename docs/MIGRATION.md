@@ -127,7 +127,7 @@ a dump:
 
 ```bash
 ./lamp.sh dump
-# .env: DATABASE=mariadb1011 (or mariadb118, mariadb123)
+# .env: DATABASE=mariadb1011 (or mariadb114, mariadb118, mariadb123)
 ./lamp.sh restart
 make db-restore FILE=data/db-dumps/<dump>.sql.gz
 ```
