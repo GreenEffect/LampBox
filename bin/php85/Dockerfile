@@ -86,7 +86,8 @@ RUN mkdir -p /etc/apache2/ssl
 RUN a2enmod ssl && a2enmod rewrite
 
 # Enable apache modules
-RUN a2enmod rewrite headers
+# remoteip is only configured in reverse proxy mode (see docker-compose.proxy.yml)
+RUN a2enmod rewrite headers remoteip
 
 ###
 RUN apt-get update && \
@@ -100,12 +101,17 @@ RUN wget https://files.phpmyadmin.net/phpMyAdmin/${PHPMYADMIN_VERSION}/phpMyAdmi
     mv /opt/phpMyAdmin-${PHPMYADMIN_VERSION}-all-languages /opt/phpmyadmin && \
     rm /tmp/phpmyadmin.zip
 
+# Who may reach phpMyAdmin: an Apache 'Require' rule read at container start
+# (override with PHPMYADMIN_REQUIRE in .env, e.g. "ip 203.0.113.10")
+ENV PHPMYADMIN_REQUIRE="all granted"
+
 # Configure Apache for phpMyAdmin avec sh -c pour forcer l'évaluation
+# (\${PHPMYADMIN_REQUIRE} stays literal: Apache resolves it at runtime)
 RUN sh -c 'echo "Alias /${COMPOSE_PROJECT_NAME}-mysql /opt/phpmyadmin\n\
 <Directory /opt/phpmyadmin>\n\
     Options Indexes FollowSymLinks\n\
     AllowOverride None\n\
-    Require all granted\n\
+    Require \${PHPMYADMIN_REQUIRE}\n\
 </Directory>" > /etc/apache2/conf-available/phpmyadmin.conf' && \
     a2enconf phpmyadmin
 

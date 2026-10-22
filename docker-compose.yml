@@ -29,6 +29,8 @@ services:
       MYSQL_HOST: "${COMPOSE_PROJECT_NAME}-database"
       COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
       PHPMYADMIN_BLOWFISH_SECRET: ${PHPMYADMIN_BLOWFISH_SECRET}
+      # Apache 'Require' rule protecting phpMyAdmin (e.g. "all denied", "ip 203.0.113.10")
+      PHPMYADMIN_REQUIRE: ${PHPMYADMIN_REQUIRE:-all granted}
       # Pass proxy configuration to Apache
       USE_REVERSE_PROXY: ${USE_REVERSE_PROXY:-false}
     networks:

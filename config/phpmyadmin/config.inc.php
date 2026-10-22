@@ -5,6 +5,8 @@ $cfg['Servers'][1]['auth_type'] = 'cookie';
 $cfg['Servers'][1]['host'] = getenv('MYSQL_HOST');
 $cfg['Servers'][1]['port'] = 3306;
 $cfg['Servers'][1]['AllowNoPassword'] = false;
+/* Pas de connexion root : utiliser MYSQL_USER (ou ./lamp.sh mysql pour root) */
+$cfg['Servers'][1]['AllowRoot'] = false;
 
 /* Augmenter la taille d'upload */
 $cfg['UploadDir'] = '';
