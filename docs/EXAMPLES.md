@@ -560,7 +560,7 @@ PHPVERSION=php82
 DATABASE=mysql84
 
 # Latest MariaDB
-DATABASE=mariadb121
+DATABASE=mariadb123
 
 # Stable MariaDB
 DATABASE=mariadb118

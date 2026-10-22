@@ -172,7 +172,7 @@ PHPVERSION=php83  # Options: php82, php83, php84, php85
 ### Change Database
 ```bash
 # In .env
-DATABASE=mysql8   # Options: mysql8, mysql84, mariadb1011, mariadb118, mariadb121
+DATABASE=mysql8   # Options: mysql8, mysql84, mariadb1011, mariadb118, mariadb123
 ```
 
 ### Change Ports

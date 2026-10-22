@@ -8,14 +8,14 @@ Modern, cross-platform LAMP stack with Docker, for local development and product
 
 ![PHP](https://img.shields.io/badge/PHP-8.2%20to%208.5-777BB4?logo=php)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0%2C%208.4-4479A1?logo=mysql)
-![MariaDB](https://img.shields.io/badge/MariaDB-10.11--12.1-003545?logo=mariadb)
+![MariaDB](https://img.shields.io/badge/MariaDB-10.11--12.3-003545?logo=mariadb)
 ![Apache](https://img.shields.io/badge/Apache-2.4-D22128?logo=apache)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)
 
 ## ✨ Features
 
 - 🚀 **Multiple PHP versions** (8.2, 8.3, 8.4, 8.5)
-- 💾 **Multiple databases** (MySQL 8.0, 8.4, MariaDB 10.11, 11.8, 12.1)
+- 💾 **Multiple databases** (MySQL 8.0, 8.4, MariaDB 10.11, 11.8, 12.3)
 - 🔒 **HTTPS/SSL** support with auto-generated certificates
 - 🎯 **Dual access modes**: Direct ports or shared reverse proxy (Traefik, multi-project)
 - 🔧 **phpMyAdmin** included and pre-configured
@@ -70,7 +70,7 @@ COMPOSE_PROJECT_NAME=lamp
 # PHP version (php82, php83, php84, php85)
 PHPVERSION=php83
 
-# Database (mysql8, mysql84, mariadb1011, mariadb118, mariadb121)
+# Database (mysql8, mysql84, mariadb1011, mariadb118, mariadb123)
 DATABASE=mysql8
 
 # Ports (change if running multiple projects in direct port mode)
@@ -117,7 +117,7 @@ as `<project>-webserver:pre-update` for a rollback. A plain
 ./lamp.sh dump
 
 # Edit .env
-DATABASE=mariadb1011  # or mysql8, mysql84, mariadb1011, mariadb118, mariadb121
+DATABASE=mariadb1011  # or mysql8, mysql84, mariadb1011, mariadb118, mariadb123
 
 # Restart: each engine uses its own directory (data/mysql-<DATABASE>), so the
 # new one starts empty and the previous data stays untouched
@@ -460,7 +460,7 @@ See [CHANGELOG.md](CHANGELOG.md) for full history.
 
 - **PHP**: Custom builds from `php:8.2-apache-bookworm` to `php:8.5-apache-bookworm`
 - **MySQL**: `mysql:8.0`, `mysql:8.4`
-- **MariaDB**: `mariadb:10.11`, `mariadb:11.8`, `mariadb:12.1`
+- **MariaDB**: `mariadb:10.11`, `mariadb:11.8`, `mariadb:12.3`
 - **Traefik**: `traefik:v3.6` (shared reverse proxy)
 - **phpMyAdmin**: Built into PHP images
 

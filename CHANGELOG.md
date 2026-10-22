@@ -20,7 +20,8 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ Shell scripts are now executable (`./init.sh`, `./lamp.sh` failed with "Permission denied" on a fresh clone)  
 ✅ Fixed `lamp.sh` (start check, `clean`, `clean-db`) and `init.sh` targeting `data/mysql` instead of the configured `MYSQL_DATA_DIR` (default `data/mysql-<DATABASE>`); `clean-db` now deletes through a database container (the files belong to the container's mysql user) and no longer recreates a `.gitkeep` that prevented MySQL from initializing; the engine marker is stored next to the data directory and written automatically  
 ✅ `./lamp.sh start` builds the images (`up --build`, cached): after changing `DATABASE` or `PHPVERSION`, the previous image was reused and the old engine initialized the new data directory  
-✅ Removed end-of-life MariaDB 10.3, 10.4, 10.5 and 10.6 (`mariadb103`-`mariadb106`)
+✅ Removed end-of-life MariaDB 10.3, 10.4, 10.5 and 10.6 (`mariadb103`-`mariadb106`)  
+✅ Replaced MariaDB 12.1 (short-term release, end of life 2026-02) with 12.3 LTS (`mariadb123`, supported until 2029-06)
 
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  
