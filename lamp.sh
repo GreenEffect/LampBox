@@ -29,6 +29,15 @@ check_env() {
         exit 1
     fi
     source .env
+
+    # A typo must not silently run development settings in production
+    case "${LAMPBOX_ENV:-development}" in
+        development|production) ;;
+        *)
+            print_error "LAMPBOX_ENV must be 'development' or 'production' (got '$LAMPBOX_ENV')"
+            exit 1
+            ;;
+    esac
 }
 
 compose_files() {
@@ -41,6 +50,11 @@ compose_files() {
     # The database has no host port by default; publish one only if requested
     if [ -n "$MYSQL_PORT" ]; then
         args+=( -f docker-compose.mysql-port.yml )
+    fi
+
+    # Production settings: php-production.ini, phpMyAdmin denied by default
+    if [ "$LAMPBOX_ENV" = "production" ]; then
+        args+=( -f docker-compose.production.yml )
     fi
 
     echo "${args[@]}"
@@ -182,7 +196,8 @@ start() {
     check_env
     check_mysql_data
     print_header "Starting LampBox: $COMPOSE_PROJECT_NAME"
-    
+    print_info "Environment: ${LAMPBOX_ENV:-development}"
+
     if [ "$1" = "--proxy" ] || [ "$1" = "-p" ] || [ "$USE_REVERSE_PROXY" = "true" ]; then
         print_info "Starting with reverse proxy mode (Traefik)..."
 
@@ -450,8 +465,21 @@ show_info() {
     
     echo ""
     echo -e "${BLUE}Project:${NC} $COMPOSE_PROJECT_NAME"
+    echo -e "${BLUE}Environment:${NC} ${LAMPBOX_ENV:-development}"
     echo -e "${BLUE}PHP Version:${NC} $PHPVERSION"
     echo -e "${BLUE}Database:${NC} $DATABASE"
+    echo ""
+
+    # Effective phpMyAdmin rule (same defaults as the compose files)
+    local pma_rule="$PHPMYADMIN_REQUIRE"
+    if [ -z "$pma_rule" ]; then
+        if [ "$LAMPBOX_ENV" = "production" ]; then
+            pma_rule="all denied"
+        else
+            pma_rule="all granted"
+        fi
+    fi
+    echo -e "${BLUE}phpMyAdmin access:${NC} Require $pma_rule"
     echo ""
     
     if [ "$USE_REVERSE_PROXY" = "true" ]; then

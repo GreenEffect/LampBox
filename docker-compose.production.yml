@@ -1,0 +1,19 @@
+# ==============================================================================
+# LampBox - Production override
+# ==============================================================================
+# Applied by lamp.sh when LAMPBOX_ENV=production. It:
+#   - mounts config/php/php-production.ini instead of the development php.ini
+#     (errors logged but not displayed, Xdebug off, PHP version not advertised)
+#   - denies phpMyAdmin unless PHPMYADMIN_REQUIRE allows it
+#
+# Running 'docker compose' directly instead of lamp.sh? Add this file to
+# COMPOSE_FILE in .env (see sample.env).
+# ==============================================================================
+
+services:
+  webserver:
+    volumes:
+      # Same target as the php.ini mount of docker-compose.yml: it replaces it
+      - ${PHP_INI_PRODUCTION:-./config/php/php-production.ini}:/usr/local/etc/php/php.ini
+    environment:
+      PHPMYADMIN_REQUIRE: ${PHPMYADMIN_REQUIRE:-all denied}

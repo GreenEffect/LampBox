@@ -21,6 +21,7 @@ services:
       - ${APACHE_LOG_DIR:-./logs/apache2}:/var/log/apache2
       - ${PHPMYADMIN_CONFIG:-./config/phpmyadmin/config.inc.php}:/opt/phpmyadmin/config.inc.php
     environment:
+      LAMPBOX_ENV: ${LAMPBOX_ENV:-development}
       APACHE_DOCUMENT_ROOT: ${APACHE_DOCUMENT_ROOT:-/var/www/html}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
