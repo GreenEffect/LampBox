@@ -249,7 +249,12 @@ start() {
     # name is fixed per project, so a plain "up" would keep the previous engine).
     # Unchanged images come from the build cache.
 
-    if [ "$1" = "--proxy" ] || [ "$1" = "-p" ] || [ "$USE_REVERSE_PROXY" = "true" ]; then
+    # --proxy must also make compose_files() add docker-compose.proxy.yml
+    if [ "$1" = "--proxy" ] || [ "$1" = "-p" ]; then
+        USE_REVERSE_PROXY=true
+    fi
+
+    if [ "$USE_REVERSE_PROXY" = "true" ]; then
         print_info "Starting with reverse proxy mode (Traefik)..."
 
         # Ensure the shared Traefik proxy, network and TLS certificate are ready

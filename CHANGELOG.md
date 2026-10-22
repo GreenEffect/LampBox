@@ -23,7 +23,8 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ Removed end-of-life MariaDB 10.3, 10.4, 10.5 and 10.6 (`mariadb103`-`mariadb106`)  
 ✅ Replaced MariaDB 12.1 (short-term release, end of life 2026-02) with 12.3 LTS (`mariadb123`, supported until 2029-06)  
 ✅ Removed `mysql8`: its `mysql:8` tag already ran MySQL 8.4 (8.0 is end of life since 2026-04); `DATABASE=mysql84` is the new default  
-✅ Added MariaDB 11.4 LTS (`mariadb114`) and MySQL 9.7 LTS (`mysql97`, without `mysql_native_password`, removed in MySQL 9)
+✅ Added MariaDB 11.4 LTS (`mariadb114`) and MySQL 9.7 LTS (`mysql97`, without `mysql_native_password`, removed in MySQL 9)  
+✅ Fixed `./lamp.sh start --proxy` (and `make start-proxy`) starting Traefik without applying `docker-compose.proxy.yml` when `USE_REVERSE_PROXY=false`
 
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  
