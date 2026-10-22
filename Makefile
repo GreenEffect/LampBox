@@ -1,7 +1,7 @@
 # Makefile for LampBox
 # Alternative to lamp.sh for those who prefer make commands
 
-.PHONY: help init check start stop restart status logs shell mysql rebuild clean ssl info start-proxy proxy-up proxy-down
+.PHONY: help init check start stop restart status logs shell mysql rebuild update clean ssl info start-proxy proxy-up proxy-down
 
 # Load environment variables
 include .env
@@ -79,6 +79,9 @@ mysql: ## Open MySQL shell
 
 rebuild: ## Rebuild all containers from scratch (pulls updated base images)
 	@./lamp.sh rebuild
+
+update: ## Pull the latest PHP image and recreate the webserver only
+	@./lamp.sh update
 
 clean: ## Remove all containers, networks, and volumes (⚠️  destructive!)
 	@echo "$(YELLOW)⚠️  WARNING: This will remove all data!$(NC)"

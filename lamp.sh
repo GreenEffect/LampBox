@@ -150,6 +150,7 @@ ${GREEN}Commands:${NC}
   shell           Open bash shell in webserver container
   mysql           Open MySQL shell
   rebuild         Rebuild and restart containers
+  update          Pull the latest PHP image and recreate the webserver only
   clean           Stop and remove all containers, networks, and volumes
   clean-db        Clean MySQL data directory only (fix initialization errors)
   ssl             Generate the shared Traefik TLS certificate (*.local)
@@ -160,6 +161,7 @@ ${GREEN}Commands:${NC}
 ${GREEN}Options:${NC}
   --proxy, -p     Use reverse proxy mode (for start/restart)
   --follow, -f    Follow logs in real-time (for logs command)
+  --yes, -y       Do not ask for confirmation (for update)
 
 ${GREEN}Examples:${NC}
   $0 proxy-up             Start the shared Traefik proxy (once for all projects)
@@ -169,6 +171,7 @@ ${GREEN}Examples:${NC}
   $0 logs webserver       Show webserver logs only
   $0 shell                Open shell in webserver
   $0 mysql                Open MySQL command line
+  $0 update               Apply a PHP security release (database untouched)
 
 EOF
 }
@@ -281,6 +284,62 @@ rebuild() {
     else
         print_info "Rebuild cancelled"
     fi
+}
+
+# Update the webserver image (e.g. after a PHP security release): pull the
+# latest base image, rebuild, show the new PHP version, then recreate the
+# webserver only. The database container is never touched.
+update() {
+    check_env
+    local assume_yes=false
+    if [ "$1" = "--yes" ] || [ "$1" = "-y" ]; then
+        assume_yes=true
+    fi
+
+    local COMPOSE_CMD=($(compose_files))
+    # 'config --images' lists every service image (webserver + database)
+    local image
+    image=$("${COMPOSE_CMD[@]}" config --images | grep -- '-webserver$' | head -n 1)
+    local container="${COMPOSE_PROJECT_NAME}-webserver"
+
+    print_header "Updating webserver: $COMPOSE_PROJECT_NAME"
+
+    local current="not running"
+    if docker ps --format '{{.Names}}' | grep -qx "$container"; then
+        current=$(docker exec "$container" php -r 'echo PHP_VERSION;')
+    fi
+
+    # Keep the current image for a rollback
+    if docker image inspect "$image" >/dev/null 2>&1; then
+        docker tag "$image" "$image:pre-update"
+        print_info "Current image saved as $image:pre-update"
+    fi
+
+    "${COMPOSE_CMD[@]}" build --pull webserver
+
+    local new
+    new=$(docker run --rm --entrypoint php "$image" -r 'echo PHP_VERSION;')
+    print_info "PHP version: $current (running) -> $new (new image)"
+
+    if [ "$assume_yes" != true ]; then
+        read -p "Recreate the webserver with the new image? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_info "Update cancelled: new image built, running container unchanged"
+            return
+        fi
+    fi
+
+    "${COMPOSE_CMD[@]}" up -d --no-deps webserver
+
+    local running
+    running=$(docker exec "$container" php -r 'echo PHP_VERSION;')
+    if [ "$running" != "$new" ]; then
+        print_error "Webserver runs PHP $running, expected $new"
+        exit 1
+    fi
+    print_info "✓ Webserver now runs PHP $running"
+    print_info "Rollback: docker tag $image:pre-update $image && ${COMPOSE_CMD[*]} up -d --no-deps webserver"
 }
 
 # Clean everything
@@ -401,6 +460,9 @@ case "$1" in
         ;;
     rebuild)
         rebuild "$2"
+        ;;
+    update)
+        update "$2"
         ;;
     clean)
         clean
