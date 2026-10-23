@@ -16,7 +16,7 @@ Modern, cross-platform LAMP stack with Docker, for local development and product
 
 - 🚀 **Multiple PHP versions** (8.2, 8.3, 8.4, 8.5)
 - 💾 **Multiple databases** (MySQL 8.4, 9.7, MariaDB 10.11, 11.4, 11.8, 12.3)
-- 🔒 **HTTPS/SSL** support with auto-generated certificates
+- 🔒 **HTTPS/SSL**: automatic behind Traefik, or on `HTTPS_PORT` once `./generate-ssl-certs.sh` has created a certificate
 - 🎯 **Dual access modes**: Direct ports or shared reverse proxy (Traefik, multi-project)
 - 🔧 **phpMyAdmin** included and pre-configured
 - 🔐 **Production mode**: hardened PHP settings, protected phpMyAdmin, safe PHP updates and consistent database dumps
@@ -179,6 +179,14 @@ docker compose exec webserver bash   # Shell
 ### Mode 1: Direct Port Access (Default)
 
 Access via `http://localhost:8080`
+
+HTTPS on `https://localhost:8443` (`HTTPS_PORT`) is enabled as soon as a
+certificate exists in `config/ssl`:
+
+```bash
+./generate-ssl-certs.sh localhost   # self-signed (or put your own cert.pem / cert-key.pem there)
+./lamp.sh restart
+```
 
 **Pros:** Simple, no configuration needed  
 **Cons:** Different ports per project

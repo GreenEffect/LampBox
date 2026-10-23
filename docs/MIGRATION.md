@@ -63,6 +63,8 @@ Copy these from the new release into the project:
 - `bin/` (Dockerfiles)
 - `config/apache/`, `config/php/php-production.ini`
 - `config/phpmyadmin/config.inc.php` (compare first if you customised it)
+- `config/vhosts/default.conf` if you did not customise it: HTTPS on
+  `HTTPS_PORT` is then enabled as soon as a certificate exists in `config/ssl`
 
 Never overwrite `.env`, `www/`, `data/`, `logs/`, or files you customised
 (`config/vhosts/`, `config/php/php.ini`). If `lamp.sh` is not executable:

@@ -563,7 +563,13 @@ show_info() {
         echo -e "${GREEN}phpMyAdmin:${NC} https://$PROJECT_DOMAIN/${COMPOSE_PROJECT_NAME}-mysql"
     else
         echo -e "${GREEN}Website (HTTP):${NC} http://$(host_address "${HTTP_PORT:-8080}")"
-        echo -e "${GREEN}Website (HTTPS):${NC} https://$(host_address "${HTTPS_PORT:-8443}")"
+        # The *:443 vhost is only enabled when a certificate exists (config/vhosts/default.conf)
+        local ssl_dir="${SSL_DIR:-./config/ssl}"
+        if [ -f "$ssl_dir/cert.pem" ] && [ -f "$ssl_dir/cert-key.pem" ]; then
+            echo -e "${GREEN}Website (HTTPS):${NC} https://$(host_address "${HTTPS_PORT:-8443}")"
+        else
+            echo -e "${GREEN}Website (HTTPS):${NC} not enabled (./generate-ssl-certs.sh localhost, then restart)"
+        fi
         echo -e "${GREEN}phpMyAdmin:${NC} http://$(host_address "${HTTP_PORT:-8080}")/${COMPOSE_PROJECT_NAME}-mysql"
     fi
 
