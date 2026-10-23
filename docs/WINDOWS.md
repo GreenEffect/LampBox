@@ -88,8 +88,13 @@ docker compose exec database mysql -u root -p
 ### Avec Command Prompt / PowerShell
 
 `docker compose` seul ne lit que `docker-compose.yml` : pour le mode proxy, le
-port MySQL ou le mode production, listez les fichiers dans `COMPOSE_FILE`
-(dans `.env`, séparés par `;` sous Windows, voir `sample.env`).
+port MySQL ou le mode production, listez les fichiers dans `.env`, séparés par
+`:` comme sous Linux (pas de `;`, qui casserait `lamp.sh`) :
+
+```bash
+COMPOSE_PATH_SEPARATOR=:
+COMPOSE_FILE=docker-compose.yml:docker-compose.production.yml
+```
 
 ```batch
 REM Démarrer

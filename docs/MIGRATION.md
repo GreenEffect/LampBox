@@ -173,6 +173,7 @@ Xdebug off, removes the `X-Powered-By` header and denies phpMyAdmin.
 `docker compose` directly, add the files to `.env`:
 
 ```bash
+COMPOSE_PATH_SEPARATOR=:     # ':' on every OS (never ';', which breaks lamp.sh)
 COMPOSE_FILE=docker-compose.yml:docker-compose.production.yml
 ```
 
