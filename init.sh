@@ -127,17 +127,18 @@ create_env_file() {
     # Copy sample.env to .env
     cp sample.env .env
     
-    # Generate phpMyAdmin Blowfish secret if not set
-    if command_exists openssl || command_exists head; then
-        BLOWFISH_SECRET=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | xxd -p 2>/dev/null || echo "$(date +%s)_random_$(($RANDOM$RANDOM))")
-        # Escape special characters for sed
-        BLOWFISH_SECRET_ESCAPED=$(echo "$BLOWFISH_SECRET" | sed 's/[\/&]/\\&/g')
+    # Generate phpMyAdmin Blowfish secret: phpMyAdmin expects exactly 32
+    # bytes and warns otherwise, so 16 random bytes in hex
+    BLOWFISH_SECRET=$(openssl rand -hex 16 2>/dev/null || od -An -N16 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')
+    if [ ${#BLOWFISH_SECRET} -eq 32 ]; then
         if [ "$OS" = "Mac" ]; then
-            sed -i '' "s/PHPMYADMIN_BLOWFISH_SECRET=$/PHPMYADMIN_BLOWFISH_SECRET=${BLOWFISH_SECRET_ESCAPED}/" .env
+            sed -i '' "s/PHPMYADMIN_BLOWFISH_SECRET=$/PHPMYADMIN_BLOWFISH_SECRET=${BLOWFISH_SECRET}/" .env
         else
-            sed -i "s/PHPMYADMIN_BLOWFISH_SECRET=$/PHPMYADMIN_BLOWFISH_SECRET=${BLOWFISH_SECRET_ESCAPED}/" .env
+            sed -i "s/PHPMYADMIN_BLOWFISH_SECRET=$/PHPMYADMIN_BLOWFISH_SECRET=${BLOWFISH_SECRET}/" .env
         fi
         print_info "✓ Generated phpMyAdmin Blowfish secret"
+    else
+        print_warning "Could not generate the phpMyAdmin Blowfish secret: set PHPMYADMIN_BLOWFISH_SECRET (32 characters) in .env"
     fi
     
     # Update UID/GID based on OS
