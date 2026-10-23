@@ -36,12 +36,10 @@ check: ## Check system requirements
 start: ## Start the stack (direct port mode)
 	@echo "$(GREEN)Starting LampBox...$(NC)"
 	@./lamp.sh start
-	@echo "$(BLUE)Access your site at: http://localhost:$(HTTP_PORT)$(NC)"
 
 start-proxy: ## Start the stack behind the shared Traefik reverse proxy (domain mode)
 	@echo "$(GREEN)Starting LampBox behind Traefik...$(NC)"
 	@./lamp.sh start --proxy
-	@echo "$(BLUE)Access your site at: https://$(PROJECT_DOMAIN)$(NC)"
 
 proxy-up: ## Start the shared Traefik reverse proxy (owns ports 80/443)
 	@echo "$(GREEN)Starting shared Traefik reverse proxy...$(NC)"

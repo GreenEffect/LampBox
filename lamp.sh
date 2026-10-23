@@ -67,6 +67,16 @@ compose_files() {
     echo "${args[@]}"
 }
 
+# Address of a published port as shown to the user: "8080" -> localhost:8080,
+# "127.0.0.1:18080" -> 127.0.0.1:18080, "0.0.0.0:8080" -> localhost:8080
+host_address() {
+    case "$1" in
+        0.0.0.0:*) echo "localhost:${1#0.0.0.0:}" ;;
+        *:*)       echo "$1" ;;
+        *)         echo "localhost:$1" ;;
+    esac
+}
+
 # Shared Traefik reverse proxy management
 PROXY_NETWORK="${PROXY_NETWORK:-lampbox_web}"
 TRAEFIK_COMPOSE="traefik/docker-compose.yml"
@@ -277,7 +287,7 @@ start() {
         local COMPOSE_CMD=($(compose_files))
         "${COMPOSE_CMD[@]}" up -d --build
         print_info "✓ Stack started"
-        print_info "Access your site at: http://localhost:$HTTP_PORT"
+        print_info "Access your site at: http://$(host_address "${HTTP_PORT:-8080}")"
     fi
     
     echo ""
@@ -550,18 +560,22 @@ show_info() {
         echo -e "${GREEN}Website:${NC} https://$PROJECT_DOMAIN"
         echo -e "${GREEN}phpMyAdmin:${NC} https://$PROJECT_DOMAIN/${COMPOSE_PROJECT_NAME}-mysql"
     else
-        echo -e "${GREEN}Website (HTTP):${NC} http://localhost:$HTTP_PORT"
-        echo -e "${GREEN}Website (HTTPS):${NC} https://localhost:$HTTPS_PORT"
-        echo -e "${GREEN}phpMyAdmin:${NC} http://localhost:$HTTP_PORT/${COMPOSE_PROJECT_NAME}-mysql"
+        echo -e "${GREEN}Website (HTTP):${NC} http://$(host_address "${HTTP_PORT:-8080}")"
+        echo -e "${GREEN}Website (HTTPS):${NC} https://$(host_address "${HTTPS_PORT:-8443}")"
+        echo -e "${GREEN}phpMyAdmin:${NC} http://$(host_address "${HTTP_PORT:-8080}")/${COMPOSE_PROJECT_NAME}-mysql"
     fi
-    
+
     if [ -n "$MYSQL_PORT" ]; then
-        echo -e "${GREEN}MySQL:${NC} localhost:$MYSQL_PORT"
+        echo -e "${GREEN}MySQL:${NC} $(host_address "$MYSQL_PORT")"
     fi
-    
+
     echo ""
     echo -e "${BLUE}Database Credentials:${NC}"
-    echo -e "  Host: ${COMPOSE_PROJECT_NAME}-database (or localhost:$MYSQL_PORT from host)"
+    if [ -n "$MYSQL_PORT" ]; then
+        echo -e "  Host: ${COMPOSE_PROJECT_NAME}-database (or $(host_address "$MYSQL_PORT") from host)"
+    else
+        echo -e "  Host: ${COMPOSE_PROJECT_NAME}-database"
+    fi
     echo -e "  Root Password: $MYSQL_ROOT_PASSWORD"
     echo -e "  Database: $MYSQL_DATABASE"
     echo -e "  User: $MYSQL_USER"

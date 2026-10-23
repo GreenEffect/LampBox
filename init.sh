@@ -53,6 +53,16 @@ command_exists() {
     command -v "$1" &> /dev/null
 }
 
+# Address of a published port as shown to the user: "8080" -> localhost:8080,
+# "127.0.0.1:18080" -> 127.0.0.1:18080, "0.0.0.0:8080" -> localhost:8080
+host_address() {
+    case "$1" in
+        0.0.0.0:*) echo "localhost:${1#0.0.0.0:}" ;;
+        *:*)       echo "$1" ;;
+        *)         echo "localhost:$1" ;;
+    esac
+}
+
 # Load .env. It is sourced by bash: an unquoted value with spaces runs as a
 # command, so check it first and point to the faulty line.
 load_env() {
@@ -252,8 +262,8 @@ show_summary() {
         if [ "$USE_REVERSE_PROXY" = "true" ]; then
             echo -e "${BLUE}Domain:${NC} https://$PROJECT_DOMAIN"
         else
-            echo -e "${BLUE}HTTP Port:${NC} http://localhost:$HTTP_PORT"
-            echo -e "${BLUE}HTTPS Port:${NC} https://localhost:$HTTPS_PORT"
+            echo -e "${BLUE}HTTP Port:${NC} http://$(host_address "${HTTP_PORT:-8080}")"
+            echo -e "${BLUE}HTTPS Port:${NC} https://$(host_address "${HTTPS_PORT:-8443}")"
         fi
         
         echo ""
@@ -299,10 +309,10 @@ show_next_steps() {
         echo -e "   ${YELLOW}./lamp.sh start${NC}"
         echo ""
         echo "3. Access your site:"
-        echo -e "   ${YELLOW}http://localhost:$HTTP_PORT${NC}"
+        echo -e "   ${YELLOW}http://$(host_address "${HTTP_PORT:-8080}")${NC}"
         echo ""
         echo "4. Access phpMyAdmin:"
-        echo -e "   ${YELLOW}http://localhost:$HTTP_PORT/${COMPOSE_PROJECT_NAME}-mysql${NC}"
+        echo -e "   ${YELLOW}http://$(host_address "${HTTP_PORT:-8080}")/${COMPOSE_PROJECT_NAME}-mysql${NC}"
     fi
     
     echo ""
