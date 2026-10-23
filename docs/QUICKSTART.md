@@ -111,7 +111,7 @@ its domain, so multiple projects run in parallel without port conflicts.
 cd ~/projects/project1
 git clone https://github.com/GreenEffect/LampBox.git .
 ./init.sh
-# Edit .env: HTTP_PORT=8080, COMPOSE_PROJECT_NAME=project1
+# Edit .env: HTTP_PORT=8080, HTTPS_PORT=8443, COMPOSE_PROJECT_NAME=project1
 ./lamp.sh start
 ```
 
@@ -120,7 +120,8 @@ git clone https://github.com/GreenEffect/LampBox.git .
 cd ~/projects/project2
 git clone https://github.com/GreenEffect/LampBox.git .
 ./init.sh
-# Edit .env: HTTP_PORT=8081, COMPOSE_PROJECT_NAME=project2
+# Edit .env: HTTP_PORT=8081, HTTPS_PORT=8444, COMPOSE_PROJECT_NAME=project2
+# (HTTPS_PORT is always published: it must differ between projects too)
 ./lamp.sh start
 ```
 

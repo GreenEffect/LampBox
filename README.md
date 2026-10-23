@@ -226,17 +226,21 @@ PROJECT_DOMAIN=myproject.local      # must be unique per project
 
 ### In direct port mode
 
-Each project needs unique identifiers and ports:
+Each project needs unique identifiers and ports. `HTTPS_PORT` too: it is
+always published in this mode, so two projects on the same value collide even
+without a certificate.
 
 ```bash
 # Project 1
 COMPOSE_PROJECT_NAME=lamp-project1
 HTTP_PORT=8080
-MYSQL_PORT=3306
+HTTPS_PORT=8443
+MYSQL_PORT=3306    # optional, only for a client on the host
 
 # Project 2
 COMPOSE_PROJECT_NAME=lamp-project2
 HTTP_PORT=8081
+HTTPS_PORT=8444
 MYSQL_PORT=3307
 ```
 
