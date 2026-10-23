@@ -304,8 +304,11 @@ LampBox/
 
 ### Xdebug
 
-Xdebug is included (develop mode by default, turned off with
-`LAMPBOX_ENV=production`). VS Code configuration in `.vscode/launch.json`:
+Xdebug is included, in `develop` mode by default (better error pages, no
+breakpoints) and turned off with `LAMPBOX_ENV=production`. For step
+debugging, uncomment the "Xdebug 3" lines of `config/php/php.ini`
+(`xdebug.mode=debug`, `xdebug.client_host=host.docker.internal`, ...), restart
+with `./lamp.sh restart` and add to `.vscode/launch.json`:
 
 ```json
 {
@@ -361,8 +364,10 @@ MYSQL_PORT=3307
 
 **"Permission denied" (Linux/Mac)**
 ```bash
-# Re-run init to fix permissions
-./init.sh
+# Apache must run with your IDs: set the output of 'id -u' / 'id -g' in .env
+USER_ID=1000
+GROUP_ID=1000
+./lamp.sh restart
 ```
 
 **MySQL won't start: "data directory has files"**
@@ -370,13 +375,6 @@ MYSQL_PORT=3307
 # Clean database and restart
 ./lamp.sh clean-db
 ./lamp.sh start
-```
-
-**phpMyAdmin: "Permissions incorrect"**
-```bash
-# Fix permissions
-chmod 644 config/phpmyadmin/config.inc.php
-docker compose restart webserver
 ```
 
 **Scripts don't work: "readonly variable"**

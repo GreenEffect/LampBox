@@ -65,7 +65,7 @@ make db-restore FILE=data/db-dumps/<dump>.sql.gz
 - Keep the default per-engine data directory (`data/mysql-<DATABASE>`): switching `DATABASE` then starts on a fresh directory. With a custom `MYSQL_DATA_DIR`, run `./lamp.sh dump` then `./lamp.sh clean-db` before switching engines
 - Don't manually modify files in the database data directory
 - Don't put any file (such as `.gitkeep`) in it: MySQL refuses to initialize a non-empty directory
-- Use `docker compose down` (not `docker compose down -v`) to preserve data
+- Stop projects with `./lamp.sh stop`. The data directory is mounted from the host: `docker compose down` (with or without `-v`) leaves it in place; only `./lamp.sh clean-db`, or `./lamp.sh clean` answered "y" twice, deletes it
 
 ### MySQL Container Exits Immediately
 
@@ -149,26 +149,6 @@ $pdo = new PDO($dsn, $user, $pass);
 ---
 
 ## 🔐 phpMyAdmin Issues
-
-### "Permissions on Configuration File Incorrect"
-
-**Error:**
-```
-phpMyAdmin - Erreur
-Permissions sur le fichier de configuration incorrectes,
-il ne doit pas être en écriture pour tout le monde !
-```
-
-**Solution:**
-```bash
-# Fix permissions (Linux/Mac)
-chmod 644 config/phpmyadmin/config.inc.php
-
-# Restart webserver
-docker compose restart webserver
-```
-
-**Note:** On Windows, this issue is automatically handled. If it persists, the configuration file has a directive to disable this check.
 
 ### Can't Access phpMyAdmin
 
@@ -401,7 +381,7 @@ never started, `https://project2.local` returns a Traefik **404** (the request
 reached Traefik, but no router matched).
 
 A frequent cause: **`MYSQL_PORT` is NOT covered by the reverse proxy** — it is
-published on the host in both modes. Two projects both using the default `3306`
+published on the host in both modes. Two projects both set to `3306`
 conflict, the database fails to start, and since `webserver` has
 `depends_on: database`, nothing comes up.
 
@@ -463,7 +443,8 @@ rm .env
 
 2. **Use WSL2**
    - Open Ubuntu terminal
-   - Navigate to project: `cd /mnt/c/path/to/LampBox`
+   - Keep the project in the Linux filesystem (e.g. `~/projects/LampBox`), not
+     under `/mnt/c`: file ownership then works as on Linux, and it is much faster
    - Run: `./init.sh`
 
 `init.bat` was removed in 3.0.0: the scripts need bash.
@@ -565,7 +546,7 @@ notepad C:\Windows\System32\drivers\etc\hosts
 
 **Linux:**
 ```bash
-sudo systemd-resolve --flush-caches
+sudo resolvectl flush-caches
 ```
 
 **Mac:**
@@ -590,8 +571,10 @@ docker ps --filter name=lampbox-traefik
 # The shared network must exist:
 docker network inspect lampbox_web >/dev/null && echo "network OK"
 
-# Check Traefik discovered your project (look for your router/rule):
-docker logs lampbox-traefik | grep -i "$(grep PROJECT_DOMAIN .env | cut -d= -f2)"
+# Check the routing rule declared by your project (Traefik reads it from this
+# label; its INFO-level log does not list routers):
+docker inspect <project>-webserver --format '{{index .Config.Labels "traefik.http.routers.<project>.rule"}}'
+# → Host(`myproject.local`); empty = the project was not started with the proxy override
 ```
 
 **Browser shows a certificate warning:** expected with the self-signed

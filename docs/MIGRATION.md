@@ -181,7 +181,7 @@ PHP 7.4, 8.0 and 8.1 receive no security fixes. Before switching `PHPVERSION`:
 
 | Removed | Use instead |
 |---|---|
-| `mysql8` | `mysql84`: same engine, the `mysql:8` image tag already pointed to 8.4 |
+| `mysql8` | `mysql84`: same engine for LampBox 2.x projects (their `mysql8` image could only run MySQL 8.4); check older ones with `docker exec <project>-database mysqld --version` |
 | `mariadb103` to `mariadb106` | `mariadb1011` or later (10.3-10.6 are end of life) |
 | `mariadb121` | `mariadb123` (12.3 LTS) |
 
