@@ -8,7 +8,9 @@ services:
         COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
     # One image per PHP version: switching PHPVERSION never reuses another one
     image: "${COMPOSE_PROJECT_NAME}-webserver:${PHPVERSION}"
-    # User mapping: Only applied on Linux/Mac, ignored on Windows
+    # Apache and PHP run with these IDs on every OS. On Linux/macOS, files PHP
+    # writes in www/ then belong to your user; on Windows, Docker Desktop
+    # handles the ownership of mounted files, so the default 1000:1000 is fine
     user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
     container_name: "${COMPOSE_PROJECT_NAME}-webserver"
     restart: unless-stopped
