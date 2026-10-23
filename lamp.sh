@@ -78,15 +78,17 @@ host_address() {
 }
 
 # Shared Traefik reverse proxy management
-PROXY_NETWORK="${PROXY_NETWORK:-lampbox_web}"
+# The network name is fixed: docker-compose.proxy.yml, traefik/docker-compose.yml
+# and traefik/traefik.yml all use lampbox_web
+LAMPBOX_PROXY_NETWORK="lampbox_web"
 TRAEFIK_COMPOSE="traefik/docker-compose.yml"
 
 # Ensure the shared network, TLS certificate and Traefik container are ready.
 ensure_proxy() {
     # Create the shared external network if it does not exist yet
-    if ! docker network inspect "$PROXY_NETWORK" >/dev/null 2>&1; then
-        print_info "Creating shared proxy network: $PROXY_NETWORK"
-        docker network create "$PROXY_NETWORK" >/dev/null
+    if ! docker network inspect "$LAMPBOX_PROXY_NETWORK" >/dev/null 2>&1; then
+        print_info "Creating shared proxy network: $LAMPBOX_PROXY_NETWORK"
+        docker network create "$LAMPBOX_PROXY_NETWORK" >/dev/null
     fi
 
     # Ensure the shared TLS certificate exists
