@@ -190,6 +190,10 @@ ipconfig /flushdns
 En mode reverse proxy, le certificat TLS est **partagé** par tous les projets et
 utilisé par Traefik. Il est stocké dans `traefik/certs/`.
 
+En accès direct par les ports, le HTTPS (`https://localhost:8443`) s'active dès
+qu'un certificat existe dans `config/ssl` : `./generate-ssl-certs.sh localhost`
+puis `./lamp.sh restart`.
+
 ### Avec Git Bash
 
 ```bash

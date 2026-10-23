@@ -248,7 +248,7 @@ nano .env
 USER_ID=1000    # Get with: id -u
 GROUP_ID=1000   # Get with: id -g
 
-# Restart containers (start rebuilds the image with the new IDs)
+# Restart: the containers are recreated with the new IDs
 ./lamp.sh restart
 ```
 
@@ -264,9 +264,10 @@ id -g  # Shows your group ID
 
 **Solution:**
 ```bash
-# Option 1: Configure correct USER_ID in .env
-USER_ID=$(id -u)
-GROUP_ID=$(id -g)
+# Option 1: Configure correct USER_ID in .env (numbers: Compose does not run
+# $(id -u) in .env), then ./lamp.sh restart
+USER_ID=1000    # output of: id -u
+GROUP_ID=1000   # output of: id -g
 
 # Option 2: Change ownership after container creates files
 sudo chown -R $USER:$USER www/

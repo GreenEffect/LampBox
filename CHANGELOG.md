@@ -37,7 +37,8 @@ Major version: end-of-life PHP and database versions and `init.bat` are removed.
 ✅ `lamp.sh` and `init.sh` show correct addresses for ports bound to an IP (`HTTP_PORT=127.0.0.1:8080` displayed `http://localhost:127.0.0.1:8080`); `./lamp.sh info` no longer shows `localhost:` as the host address of an unpublished database  
 ✅ Direct HTTPS on `HTTPS_PORT` works: the `*:443` vhost is enabled automatically once `config/ssl` holds a certificate (`./generate-ssl-certs.sh localhost`); it was commented out, so the port served plain HTTP even with a certificate. `./lamp.sh info` shows whether HTTPS is enabled  
 ✅ Confirmation prompts of `lamp.sh` and `init.sh` treat a closed input (cron, CI, no terminal) as "No" and say so, instead of exiting silently with an error  
-✅ Documentation starts and restarts projects with `./lamp.sh` instead of `docker compose up -d`, which ignores the proxy, MySQL port and production overrides (the troubleshooting steps for `MYSQL_PORT` never published the port); direct `docker compose` usage is documented with `COMPOSE_PATH_SEPARATOR=:` and `COMPOSE_FILE` in `.env`, which work on every OS and with `lamp.sh`
+✅ Documentation starts and restarts projects with `./lamp.sh` instead of `docker compose up -d`, which ignores the proxy, MySQL port and production overrides (the troubleshooting steps for `MYSQL_PORT` never published the port); direct `docker compose` usage is documented with `COMPOSE_PATH_SEPARATOR=:` and `COMPOSE_FILE` in `.env`, which work on every OS and with `lamp.sh`  
+✅ Fixed the user ID instructions (re-running `init.sh` does not change `USER_ID` in an existing `.env`, and Compose does not run `$(id -u)` in `.env`); the quick start warns that a new `DATABASE` starts on an empty data directory
 
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  

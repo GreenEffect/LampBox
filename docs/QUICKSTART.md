@@ -149,12 +149,21 @@ Both projects now run simultaneously! 🎊
 ```bash
 # In .env
 PHPVERSION=php83  # Options: php82, php83, php84, php85
+
+# Then rebuild the webserver for that version
+./lamp.sh restart
 ```
 
 ### Change Database
 ```bash
+# Keep a dump first: each engine uses its own data directory, so the new one
+# starts EMPTY (the previous data stays in data/mysql-<old DATABASE>)
+./lamp.sh dump
+
 # In .env
 DATABASE=mysql84  # Options: mysql84, mysql97, mariadb1011, mariadb114, mariadb118, mariadb123
+
+./lamp.sh restart
 ```
 
 ### Change Ports
@@ -199,9 +208,12 @@ HTTP_PORT=8081
 
 ### Permission Denied
 ```bash
-# Run init.sh again to fix USER_ID/GROUP_ID
-./init.sh
-./lamp.sh rebuild
+# Linux/macOS: Apache must run with your user ID. In .env:
+USER_ID=1000     # output of: id -u
+GROUP_ID=1000    # output of: id -g
+
+# Then restart: the containers are recreated with these IDs
+./lamp.sh restart
 ```
 
 ### Database Won't Start
