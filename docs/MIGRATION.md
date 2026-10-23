@@ -89,6 +89,7 @@ Then review:
 | `MYSQL_PORT` | Leave empty unless a client on the host needs the database (it is no longer published by default) |
 | `LAMPBOX_ENV` | `production` for a public site (see step 6) |
 | `PHPMYADMIN_REQUIRE` | Who may open phpMyAdmin, e.g. `PHPMYADMIN_REQUIRE='ip 203.0.113.10'` (quotes included) |
+| `PHPMYADMIN_BLOWFISH_SECRET` | Must be exactly 32 characters. Older `init.sh` versions generated 64, and phpMyAdmin then warns that the key is "longer than necessary": replace it with the output of `openssl rand -hex 16` (phpMyAdmin users log in again) |
 | Values containing `$` or spaces | Put them between single quotes: `MYSQL_PASSWORD='abc$xyz'` |
 
 ## 4. Move Off Unsupported Versions

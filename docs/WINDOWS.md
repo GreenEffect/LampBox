@@ -132,7 +132,8 @@ docker exec -it lamp-database mysql -u root -p
 C:\Users\VotreNom\LampBox\
 ├── www\              ← Votre code PHP ici
 ├── config\           ← Configurations
-├── data\mysql\       ← Base de données (ne pas modifier)
+├── data\mysql-<DATABASE>\  ← Base de données (ne pas modifier)
+├── data\db-dumps\    ← Sauvegardes (./lamp.sh dump)
 └── logs\             ← Logs Apache/MySQL
 ```
 
