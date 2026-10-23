@@ -121,7 +121,9 @@ create_env_file() {
     
     if [ -f .env ]; then
         print_warning ".env file already exists!"
-        read -p "Do you want to overwrite it? (y/N): " -n 1 -r
+        # No terminal (closed stdin): read fails, which set -e must not turn
+        # into a silent exit; an empty answer keeps the file
+        read -p "Do you want to overwrite it? (y/N): " -n 1 -r || true
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             print_info "Keeping existing .env file"

@@ -192,7 +192,9 @@ check_mysql_data() {
     # ask once, then remember the answer
     print_warning "'$dir' contains database data of an unknown engine (DATABASE is '$DATABASE')."
     print_warning "Starting a different engine on it may fail or damage the data."
-    read -p "Is this data from '$DATABASE'? (y/N): " -n 1 -r
+    # Prompts below end with '|| true': without a terminal, read fails and
+    # set -e would exit silently; an empty answer means No
+    read -p "Is this data from '$DATABASE'? (y/N): " -n 1 -r || true
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         print_info "Aborting startup. Set DATABASE to the engine that created this data."
@@ -363,7 +365,7 @@ rebuild() {
     check_env
     print_header "Rebuilding LampBox"
     print_warning "This will rebuild all containers from scratch"
-    read -p "Continue? (y/N): " -n 1 -r
+    read -p "Continue? (y/N): " -n 1 -r || true
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         local COMPOSE_CMD=($(compose_files))
@@ -420,7 +422,7 @@ update() {
     print_info "PHP version: $current (running) -> $new (new image)"
 
     if [ "$assume_yes" != true ]; then
-        read -p "Recreate the webserver with the new image? (y/N): " -n 1 -r
+        read -p "Recreate the webserver with the new image? (y/N): " -n 1 -r || true
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             print_info "Update cancelled: new image built, running container unchanged"
@@ -483,14 +485,14 @@ clean() {
     print_header "Cleaning LampBox"
     print_warning "This will remove all containers, networks, and volumes!"
     print_warning "Your database data will be LOST unless backed up!"
-    read -p "Are you sure? (y/N): " -n 1 -r
+    read -p "Are you sure? (y/N): " -n 1 -r || true
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         local COMPOSE_CMD=($(compose_files))
         "${COMPOSE_CMD[@]}" down -v
         print_info "✓ All containers, networks, and volumes removed"
         
-        read -p "Also remove the database data in $(mysql_data_dir)? (y/N): " -n 1 -r
+        read -p "Also remove the database data in $(mysql_data_dir)? (y/N): " -n 1 -r || true
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             wipe_mysql_data
@@ -512,7 +514,7 @@ clean_db() {
     echo ""
     print_info "Use this if MySQL won't start due to 'data directory has files' error"
     echo ""
-    read -p "Remove all MySQL data? (y/N): " -n 1 -r
+    read -p "Remove all MySQL data? (y/N): " -n 1 -r || true
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         # Stops the database container, then empties the directory
