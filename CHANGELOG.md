@@ -2,7 +2,7 @@
 
 ### 3.0.0 - 2026-10-23
 Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619).
-Major version: end-of-life PHP and database versions and `init.bat` are removed; to update a project created with an older LampBox, see `docs/MIGRATION.md`
+Major version: end-of-life PHP and database versions and `init.bat` are removed. For a site created with an older LampBox, start from a fresh 3.0 copy and move the site into it (`docs/MIGRATION.md`); updating the old project in place is not recommended
 
 ✅ **Production mode**: `LAMPBOX_ENV=production` applies `docker-compose.production.yml` and `config/php/php-production.ini` (errors logged but not displayed, Xdebug off, `expose_php` off, strict HttpOnly sessions); an invalid value stops `lamp.sh`  
 ✅ **phpMyAdmin**: access rule set by `PHPMYADMIN_REQUIRE` (`all granted` in development, `all denied` in production, or e.g. `PHPMYADMIN_REQUIRE='ip 203.0.113.10'`); root login disabled (`AllowRoot = false`); updated from 5.2.1 to 5.2.3  
@@ -17,7 +17,7 @@ Major version: end-of-life PHP and database versions and `init.bat` are removed;
 ✅ Removed end-of-life PHP 8.0 (`php8`) and 8.1 (`php81`)  
 ✅ Removed the `test/` scripts; fixed `dev_build_container.sh` turning `PHPVERSION=php83` into `php823`  
 ✅ `sample.env` documents single-quoting values that contain `$`  
-✅ New `docs/MIGRATION.md` for projects created with older versions (data directory, database port, PHP versions, production mode, backups)  
+✅ New `docs/MIGRATION.md`: moving a site into a fresh 3.0 copy (recommended: dump, new project, restore, `mariadb-upgrade` after a dump from an older MariaDB), and, not recommended, updating a project in place (data directory, database port, PHP versions, production mode, backups)  
 ✅ Shell scripts are now executable (`./init.sh`, `./lamp.sh` failed with "Permission denied" on a fresh clone)  
 ✅ New `.gitattributes`: files keep LF endings on a Windows clone (`core.autocrlf=true` turned `lamp.sh`, Dockerfiles and `.env` into CRLF, which bash and the containers reject)  
 ✅ Fixed `lamp.sh` (start check, `clean`, `clean-db`) and `init.sh` targeting `data/mysql` instead of the configured `MYSQL_DATA_DIR` (default `data/mysql-<DATABASE>`); `clean-db` now deletes through a database container (the files belong to the container's mysql user) and no longer recreates a `.gitkeep` that prevented MySQL from initializing; the engine marker is stored next to the data directory and written automatically  
@@ -37,9 +37,7 @@ Major version: end-of-life PHP and database versions and `init.bat` are removed;
 ✅ `lamp.sh` and `init.sh` show correct addresses for ports bound to an IP (`HTTP_PORT=127.0.0.1:8080` displayed `http://localhost:127.0.0.1:8080`); `./lamp.sh info` no longer shows `localhost:` as the host address of an unpublished database  
 ✅ Direct HTTPS on `HTTPS_PORT` works: the `*:443` vhost is enabled automatically once `config/ssl` holds a certificate (`./generate-ssl-certs.sh localhost`); it was commented out, so the port served plain HTTP even with a certificate. `./lamp.sh info` shows whether HTTPS is enabled  
 ✅ Confirmation prompts of `lamp.sh` and `init.sh` treat a closed input (cron, CI, no terminal) as "No" and say so, instead of exiting silently with an error  
-✅ Documentation starts and restarts projects with `./lamp.sh` instead of `docker compose up -d`, which ignores the proxy, MySQL port and production overrides (the troubleshooting steps for `MYSQL_PORT` never published the port); direct `docker compose` usage points to `COMPOSE_FILE`  
-✅ Migration guide: run `mariadb-upgrade --force` after restoring a dump from an older MariaDB (tested from 10.6 to 10.11: the restored system tables kept their old format and MariaDB logged "Incorrect definition of table mysql.column_stats")  
-✅ `COMPOSE_FILE` is documented with `COMPOSE_PATH_SEPARATOR=:`, which works on every OS: the `;` separator suggested for Windows made `.env` unloadable by `lamp.sh` (bash ran the second file name as a command), and `:` alone is not split by Compose on Windows
+✅ Documentation starts and restarts projects with `./lamp.sh` instead of `docker compose up -d`, which ignores the proxy, MySQL port and production overrides (the troubleshooting steps for `MYSQL_PORT` never published the port); direct `docker compose` usage is documented with `COMPOSE_PATH_SEPARATOR=:` and `COMPOSE_FILE` in `.env`, which work on every OS and with `lamp.sh`
 
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  

@@ -64,7 +64,7 @@ cd LampBox/
 - **[Examples](docs/EXAMPLES.md)** - Real-world use cases and configurations
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Windows Guide](docs/WINDOWS.md)** - Windows-specific instructions
-- **[Migration Guide](docs/MIGRATION.md)** - Update a project created with an older LampBox
+- **[Migration Guide](docs/MIGRATION.md)** - Move a site from an older LampBox (a fresh 3.0 copy is recommended)
 - **[Changelog](CHANGELOG.md)** - Version history
 
 ## ⚙️ Configuration
@@ -159,7 +159,7 @@ Using the `lamp.sh` helper script:
 ./lamp.sh update         # Apply a PHP security release (webserver only)
 ./lamp.sh clean          # Clean everything (containers + data)
 ./lamp.sh clean-db       # Clean database only
-./lamp.sh ssl            # Generate SSL certificates
+./lamp.sh ssl            # Generate the shared Traefik certificate (*.local)
 ```
 
 Or use Docker Compose directly. It only reads `docker-compose.yml`: list the
@@ -428,7 +428,8 @@ Also for production:
 - Back up with `./lamp.sh dump`, never by copying `data/` while the database runs
 - Apply PHP security releases with `./lamp.sh update`
 
-Updating a project created with an older LampBox: see the
+Site created with an older LampBox: start from a fresh 3.0 copy and move the
+site into it (updating the old project in place is not recommended), see the
 [Migration Guide](docs/MIGRATION.md).
 
 ## 🆚 What's New in v3.0.0
@@ -440,10 +441,12 @@ Updating a project created with an older LampBox: see the
 - ✅ New `./lamp.sh dump`: consistent database dumps with rotation; passwords no longer on the command line
 - ✅ `./lamp.sh rebuild` now pulls updated base images
 - ✅ php82 follows `php:8.2-apache-bookworm`; PHP 8.0 and 8.1 removed (end of life)
-- ✅ New [Migration Guide](docs/MIGRATION.md) for projects created with older versions
+- ✅ New [Migration Guide](docs/MIGRATION.md): move a site from an older version into a fresh 3.0 copy (recommended)
 - ✅ Databases: only supported LTS versions (MySQL 8.4, 9.7; MariaDB 10.11, 11.4, 11.8, 12.3); default is now `mysql84`
 - ✅ Fixed database data directory handling (`clean-db`, engine check) and engine switching (`start` builds the matching image)
-- ✅ Shell scripts are executable
+- ✅ Direct HTTPS on `HTTPS_PORT` works once `./generate-ssl-certs.sh` has created a certificate
+- ✅ Running `docker compose` directly: `COMPOSE_PATH_SEPARATOR=:` and `COMPOSE_FILE` in `.env`, on every OS
+- ✅ Shell scripts are executable, files keep LF endings on Windows, `make clean` fixed on Linux
 - ✅ `init.bat` removed: on Windows, use Git Bash or WSL2; supported platforms are now stated
 
 ### Version 2.2.0 (2026-07-15)
