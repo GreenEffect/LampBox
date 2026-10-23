@@ -31,7 +31,8 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ `lamp.sh` help shows colors instead of raw `\033` codes; the `Makefile` works without `.env` (`make init`, `make help`)  
 ✅ `lamp.sh` and `init.sh` report an `.env` that bash cannot load (e.g. an unquoted value with spaces) with the faulty line, instead of failing with "command not found"  
 ✅ `init.sh` generates a 32-character phpMyAdmin Blowfish secret, the length phpMyAdmin expects (64 characters triggered a "longer than necessary" warning; the `xxd` fallback split the key over two lines)  
-✅ Removed `init.bat`: on Windows, use `init.sh` and `lamp.sh` from Git Bash or WSL2. It duplicated `init.sh` without its later changes, left the phpMyAdmin secret empty, never overwrote `.env` when asked to, and could not run `lamp.sh` (`start`, `update`, `dump`, production mode) anyway. Supported platforms are now stated: Linux (tested, development and production), macOS and Windows (development, not systematically tested)
+✅ Removed `init.bat`: on Windows, use `init.sh` and `lamp.sh` from Git Bash or WSL2. It duplicated `init.sh` without its later changes, left the phpMyAdmin secret empty, never overwrote `.env` when asked to, and could not run `lamp.sh` (`start`, `update`, `dump`, production mode) anyway. Supported platforms are now stated: Linux (tested, development and production), macOS and Windows (development, not systematically tested)  
+✅ Fixed `make clean` always answering "Clean cancelled" on Linux (its recipe used bash syntax under `/bin/sh`); it now runs `./lamp.sh clean`, which also offers to delete the database data
 
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  

@@ -81,15 +81,7 @@ update: ## Pull the latest PHP image and recreate the webserver only
 	@./lamp.sh update
 
 clean: ## Remove all containers, networks, and volumes (⚠️  destructive!)
-	@echo "$(YELLOW)⚠️  WARNING: This will remove all data!$(NC)"
-	@read -p "Are you sure? [y/N] " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker compose -f docker-compose.yml down -v; \
-		echo "$(GREEN)✓ Cleaned$(NC)"; \
-	else \
-		echo "$(YELLOW)Clean cancelled$(NC)"; \
-	fi
+	@./lamp.sh clean
 
 ##@ SSL
 
