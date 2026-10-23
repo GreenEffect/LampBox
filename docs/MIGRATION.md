@@ -136,6 +136,11 @@ a dump:
 # .env: DATABASE=mariadb1011 (or mariadb114, mariadb118, mariadb123)
 ./lamp.sh restart
 make db-restore FILE=data/db-dumps/<dump>.sql.gz
+# The dump also restored the system tables (users, grants) in their old
+# format: bring them to the new version, otherwise MariaDB logs
+# "Incorrect definition of table mysql.column_stats"
+docker compose exec -T database sh -c \
+  'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mariadb-upgrade -uroot --force'
 ```
 
 The previous data directory is left untouched: delete it once the site is

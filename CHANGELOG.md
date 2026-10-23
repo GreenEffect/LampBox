@@ -38,6 +38,7 @@ Major version: end-of-life PHP and database versions and `init.bat` are removed;
 ✅ Direct HTTPS on `HTTPS_PORT` works: the `*:443` vhost is enabled automatically once `config/ssl` holds a certificate (`./generate-ssl-certs.sh localhost`); it was commented out, so the port served plain HTTP even with a certificate. `./lamp.sh info` shows whether HTTPS is enabled  
 ✅ Confirmation prompts of `lamp.sh` and `init.sh` treat a closed input (cron, CI, no terminal) as "No" and say so, instead of exiting silently with an error  
 ✅ Documentation starts and restarts projects with `./lamp.sh` instead of `docker compose up -d`, which ignores the proxy, MySQL port and production overrides (the troubleshooting steps for `MYSQL_PORT` never published the port); direct `docker compose` usage points to `COMPOSE_FILE`  
+✅ Migration guide: run `mariadb-upgrade --force` after restoring a dump from an older MariaDB (tested from 10.6 to 10.11: the restored system tables kept their old format and MariaDB logged "Incorrect definition of table mysql.column_stats")  
 ✅ `COMPOSE_FILE` is documented with `COMPOSE_PATH_SEPARATOR=:`, which works on every OS: the `;` separator suggested for Windows made `.env` unloadable by `lamp.sh` (bash ran the second file name as a command), and `:` alone is not split by Compose on Windows
 
 ### 2.2.0 - 2026-07-15
