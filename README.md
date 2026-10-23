@@ -20,14 +20,22 @@ Modern, cross-platform LAMP stack with Docker, for local development and product
 - 🎯 **Dual access modes**: Direct ports or shared reverse proxy (Traefik, multi-project)
 - 🔧 **phpMyAdmin** included and pre-configured
 - 🔐 **Production mode**: hardened PHP settings, protected phpMyAdmin, safe PHP updates and consistent database dumps
-- 🌍 **Cross-platform**: Linux, macOS, Windows (Git Bash/WSL2/CMD)
+- 🌍 **Cross-platform**: Linux, macOS, Windows (Git Bash/WSL2)
 - 📦 **Isolated projects**: Run multiple LAMP stacks simultaneously
 - ⚡ **Auto-configuration**: Permissions and secrets handled automatically
 
 ## 📋 Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running
-- **Windows users**: [Git Bash](https://git-scm.com/downloads) recommended (or WSL2)
+- **Windows users**: [Git Bash](https://git-scm.com/downloads) or WSL2 (the scripts need bash)
+
+### Supported Platforms
+
+| Platform | Use | Tested |
+|---|---|---|
+| Linux | development and production | yes |
+| macOS | development | not systematically |
+| Windows (Git Bash or WSL2) | development | not systematically |
 
 ## 🚀 Quick Start (30 seconds)
 
@@ -272,8 +280,7 @@ LampBox/
 ├── docker-compose.mysql-port.yml # Publishes the DB port (if MYSQL_PORT is set)
 ├── docker-compose.production.yml # Production settings (if LAMPBOX_ENV=production)
 ├── sample.env               # Environment template
-├── init.sh                  # Initialization script (Linux/Mac/Git Bash)
-├── init.bat                 # Initialization script (Windows CMD)
+├── init.sh                  # Initialization script (Linux/Mac/Git Bash/WSL2)
 ├── lamp.sh                  # Management helper script
 ├── generate-ssl-certs.sh    # SSL cert generator (direct Apache HTTPS)
 └── check-system.sh          # System requirements checker
@@ -370,13 +377,13 @@ sed -i 's/^GID=/GROUP_ID=/' .env
 
 ## 🖥️ Windows Users
 
-**Recommended:** Use Git Bash for best experience
+`init.sh` and `lamp.sh` are bash scripts. Run them from:
 
-**3 Methods:**
-
-1. **Git Bash** (recommended) - Full bash script support
+1. **Git Bash** (recommended) - installed with Git for Windows
 2. **WSL2** - Linux experience on Windows
-3. **CMD** - Basic support with `init.bat` and Docker commands
+
+`init.bat` was removed in 2.3.0. Plain `docker compose` commands also work
+from CMD or PowerShell once `.env` exists.
 
 See [Windows Guide](docs/WINDOWS.md) for detailed instructions.
 
@@ -427,6 +434,7 @@ Updating a project created with an older LampBox: see the
 - ✅ Databases: only supported LTS versions (MySQL 8.4, 9.7; MariaDB 10.11, 11.4, 11.8, 12.3); default is now `mysql84`
 - ✅ Fixed database data directory handling (`clean-db`, engine check) and engine switching (`start` builds the matching image)
 - ✅ Shell scripts are executable
+- ✅ `init.bat` removed: on Windows, use Git Bash or WSL2; supported platforms are now stated
 
 ### Version 2.2.0 (2026-07-15)
 - ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance

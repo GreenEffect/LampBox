@@ -2,7 +2,7 @@
 
 ## 🚀 Get Started in 3 Steps
 
-### Linux / macOS / Windows (Git Bash)
+### Linux / macOS / Windows (Git Bash or WSL2)
 
 ### 1️⃣ Initialize
 ```bash
@@ -22,26 +22,8 @@ docker compose up -d
 
 🎉 **Done!** Access your site at http://localhost:8080
 
----
-
-### Windows (Command Prompt) - Alternative
-
-### 1️⃣ Initialize
-```batch
-init.bat
-```
-
-### 2️⃣ Configure (Optional)
-```batch
-notepad .env
-```
-
-### 3️⃣ Start
-```batch
-docker compose up -d
-```
-
-**Note for Windows users:** See [WINDOWS.md](WINDOWS.md) for detailed Windows guide.
+**Note for Windows users:** run these commands in Git Bash or WSL2 (the scripts
+need bash). See [WINDOWS.md](WINDOWS.md) for the detailed Windows guide.
 
 ---
 

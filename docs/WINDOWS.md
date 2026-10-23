@@ -4,6 +4,10 @@
 
 Ce guide vous aide à configurer et utiliser LampBox v2.3.0 sur Windows.
 
+Windows est pris en charge pour le **développement**, via Git Bash ou WSL2 :
+les scripts (`init.sh`, `lamp.sh`) sont en bash. Ils ne sont pas testés
+systématiquement sous Windows. `init.bat` a été supprimé en 2.3.0.
+
 ---
 
 ## 📋 Prérequis Windows
@@ -23,7 +27,7 @@ Ce guide vous aide à configurer et utiliser LampBox v2.3.0 sur Windows.
 
 ### 2. Options pour Exécuter les Scripts
 
-Vous avez **3 options** pour exécuter les scripts bash :
+Vous avez **2 options** pour exécuter les scripts bash :
 
 #### Option A: Git Bash (Recommandé)
 - **Installation:** https://git-scm.com/download/win
@@ -35,16 +39,14 @@ Vous avez **3 options** pour exécuter les scripts bash :
 - **Distribution:** Ubuntu recommandé
 - **Avantages:** Environnement Linux complet
 
-#### Option C: Scripts Natifs Windows (.bat)
-- **Pas d'installation** requise
-- **Limitation:** Seulement pour init.bat
-- **Usage:** Double-clic sur `init.bat`
+Une fois `.env` créé, les commandes `docker compose` fonctionnent aussi depuis
+l'Invite de commandes ou PowerShell (sans les commandes de `lamp.sh`).
 
 ---
 
 ## 🚀 Installation Rapide (Windows)
 
-### Méthode 1: Avec Git Bash (Recommandé)
+Avec Git Bash (ou dans un terminal WSL2) :
 
 ```bash
 # 1. Extraire l'archive (clic droit → Extraire)
@@ -54,26 +56,10 @@ Vous avez **3 options** pour exécuter les scripts bash :
 bash init.sh
 
 # 4. Démarrer
-docker compose up -d
+./lamp.sh start
 
 # 5. Accès
 # http://localhost:8080
-```
-
-### Méthode 2: Sans Git Bash (Scripts Natifs)
-
-```batch
-REM 1. Extraire l'archive
-REM 2. Double-clic sur init.bat
-
-REM 3. Ouvrir Command Prompt dans le dossier
-REM (Shift + Clic droit → "Ouvrir dans le terminal")
-
-REM 4. Démarrer
-docker compose up -d
-
-REM 5. Accès
-REM http://localhost:8080
 ```
 
 ---
@@ -402,8 +388,8 @@ netstat -an | findstr LISTENING
 - [ ] Docker Desktop installé et en cours d'exécution
 - [ ] Git Bash installé (ou WSL2)
 - [ ] Archive extraite dans un dossier accessible
-- [ ] `.env` configuré (via init.bat ou init.sh)
-- [ ] Docker compose lancé (`docker compose up -d`)
+- [ ] `.env` configuré (via `init.sh` dans Git Bash ou WSL2)
+- [ ] Stack lancé (`./lamp.sh start`)
 - [ ] Site accessible (`http://localhost:8080`)
 - [ ] phpMyAdmin accessible (`http://localhost:8080/lamp-mysql`)
 

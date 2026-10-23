@@ -18,7 +18,7 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ `sample.env` documents single-quoting values that contain `$`  
 ✅ New `docs/MIGRATION.md` for projects created with older versions (data directory, database port, PHP versions, production mode, backups)  
 ✅ Shell scripts are now executable (`./init.sh`, `./lamp.sh` failed with "Permission denied" on a fresh clone)  
-✅ New `.gitattributes`: files keep LF endings on a Windows clone (`core.autocrlf=true` turned `lamp.sh`, Dockerfiles and `.env` into CRLF, which bash and the containers reject); `init.bat` gets CRLF  
+✅ New `.gitattributes`: files keep LF endings on a Windows clone (`core.autocrlf=true` turned `lamp.sh`, Dockerfiles and `.env` into CRLF, which bash and the containers reject)  
 ✅ Fixed `lamp.sh` (start check, `clean`, `clean-db`) and `init.sh` targeting `data/mysql` instead of the configured `MYSQL_DATA_DIR` (default `data/mysql-<DATABASE>`); `clean-db` now deletes through a database container (the files belong to the container's mysql user) and no longer recreates a `.gitkeep` that prevented MySQL from initializing; the engine marker is stored next to the data directory and written automatically  
 ✅ Images are tagged per version (`<project>-webserver:<PHPVERSION>`, `<project>-database:<DATABASE>`) and `./lamp.sh start` builds them (`up --build`, cached): after changing `DATABASE` or `PHPVERSION`, the single per-project image was reused and the old engine initialized the new data directory  
 ✅ Removed end-of-life MariaDB 10.3, 10.4, 10.5 and 10.6 (`mariadb103`-`mariadb106`)  
@@ -30,7 +30,8 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ `dev_build_container.sh` rewritten: Docker Compose v2, isolated projects in `./buildtest/` (the project's data is never touched), mysqli and PDO checked from PHP instead of a missing test page, full cleanup and a summary exit code  
 ✅ `lamp.sh` help shows colors instead of raw `\033` codes; the `Makefile` works without `.env` (`make init`, `make help`)  
 ✅ `lamp.sh` and `init.sh` report an `.env` that bash cannot load (e.g. an unquoted value with spaces) with the faulty line, instead of failing with "command not found"  
-✅ `init.sh` generates a 32-character phpMyAdmin Blowfish secret, the length phpMyAdmin expects (64 characters triggered a "longer than necessary" warning; the `xxd` fallback split the key over two lines)
+✅ `init.sh` generates a 32-character phpMyAdmin Blowfish secret, the length phpMyAdmin expects (64 characters triggered a "longer than necessary" warning; the `xxd` fallback split the key over two lines)  
+✅ Removed `init.bat`: on Windows, use `init.sh` and `lamp.sh` from Git Bash or WSL2. It duplicated `init.sh` without its later changes, left the phpMyAdmin secret empty, never overwrote `.env` when asked to, and could not run `lamp.sh` (`start`, `update`, `dump`, production mode) anyway. Supported platforms are now stated: Linux (tested, development and production), macOS and Windows (development, not systematically tested)
 
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  

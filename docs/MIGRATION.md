@@ -68,6 +68,9 @@ Never overwrite `.env`, `www/`, `data/`, `logs/`, or files you customised
 (`config/vhosts/`, `config/php/php.ini`). If `lamp.sh` is not executable:
 `chmod +x lamp.sh init.sh`.
 
+`init.bat` is no longer provided: delete it from the project. On Windows, run
+`init.sh` and `lamp.sh` from Git Bash or WSL2.
+
 ## 3. Update `.env`
 
 List the variables that `sample.env` has and your `.env` lacks:

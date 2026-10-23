@@ -295,12 +295,6 @@ sudo chown -R $USER:$USER www/
    ./init.sh
    ```
 
-3. **Use Windows CMD**
-   ```cmd
-   init.bat
-   docker compose up -d
-   ```
-
 ---
 
 ## 🔌 Port Issues
@@ -474,9 +468,7 @@ rm .env
    - Navigate to project: `cd /mnt/c/path/to/LampBox`
    - Run: `./init.sh`
 
-3. **Use Windows CMD**
-   - Use `init.bat` instead of `init.sh`
-   - Use Docker commands directly: `docker compose up -d`
+`init.bat` was removed in 2.3.0: the scripts need bash.
 
 ### lamp.sh Commands Don't Work
 
