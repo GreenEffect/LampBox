@@ -70,10 +70,10 @@ bash init.sh
 
 ```bash
 # Démarrer
-docker compose up -d
+./lamp.sh start
 
 # Arrêter
-docker compose down
+./lamp.sh stop
 
 # Voir les logs
 docker compose logs -f
@@ -86,6 +86,10 @@ docker compose exec database mysql -u root -p
 ```
 
 ### Avec Command Prompt / PowerShell
+
+`docker compose` seul ne lit que `docker-compose.yml` : pour le mode proxy, le
+port MySQL ou le mode production, listez les fichiers dans `COMPOSE_FILE`
+(dans `.env`, séparés par `;` sous Windows, voir `sample.env`).
 
 ```batch
 REM Démarrer

@@ -32,20 +32,20 @@ Common issues and solutions for LampBox v2.3.0.
 ```bash
 # Clean database and restart
 ./lamp.sh clean-db
-docker compose up -d
+./lamp.sh start
 ```
 
 **Solution 2: Manual Cleanup**
 ```bash
 # Stop containers
-docker compose down
+./lamp.sh stop
 
 # Clean the data directory (its files belong to the container's mysql
 # user, so a plain 'rm' from the host usually needs sudo)
 sudo rm -rf data/mysql-<DATABASE>/*
 
 # Restart
-docker compose up -d
+./lamp.sh start
 ```
 
 **Solution 3: With Backup**
@@ -55,7 +55,7 @@ docker compose up -d
 
 # Clean and restart
 ./lamp.sh clean-db
-docker compose up -d
+./lamp.sh start
 
 # Restore if needed
 make db-restore FILE=data/db-dumps/<dump>.sql.gz
@@ -85,16 +85,15 @@ docker compose logs database
    # Change MySQL port in .env
    MYSQL_PORT=3307
    
-   # Restart
-   docker compose down
-   docker compose up -d
+   # Restart (lamp.sh applies docker-compose.mysql-port.yml when MYSQL_PORT is set)
+   ./lamp.sh restart
    ```
 
 2. **Corrupted data directory**
    ```bash
    # Clean and restart
    ./lamp.sh clean-db
-   docker compose up -d
+   ./lamp.sh start
    ```
 
 3. **Insufficient memory**
@@ -249,9 +248,8 @@ nano .env
 USER_ID=1000    # Get with: id -u
 GROUP_ID=1000   # Get with: id -g
 
-# Restart containers
-docker compose down
-docker compose up -d
+# Restart containers (start rebuilds the image with the new IDs)
+./lamp.sh restart
 ```
 
 **Find your UID/GID:**
@@ -331,8 +329,7 @@ HTTPS_PORT=8444
 MYSQL_PORT=3307
 
 # Restart
-docker compose down
-docker compose up -d
+./lamp.sh restart
 ```
 
 **Solution 2: Stop conflicting service**
@@ -489,6 +486,9 @@ docker compose up -d        # Instead of: ./lamp.sh start
 docker compose down         # Instead of: ./lamp.sh stop
 docker compose logs -f      # Instead of: ./lamp.sh logs
 ```
+
+These only read `docker-compose.yml`: list the overrides you need (proxy,
+MySQL port, production) in `COMPOSE_FILE` in `.env` (see `sample.env`).
 
 ---
 

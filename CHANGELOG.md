@@ -33,7 +33,8 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ `init.sh` generates a 32-character phpMyAdmin Blowfish secret, the length phpMyAdmin expects (64 characters triggered a "longer than necessary" warning; the `xxd` fallback split the key over two lines)  
 ✅ Removed `init.bat`: on Windows, use `init.sh` and `lamp.sh` from Git Bash or WSL2. It duplicated `init.sh` without its later changes, left the phpMyAdmin secret empty, never overwrote `.env` when asked to, and could not run `lamp.sh` (`start`, `update`, `dump`, production mode) anyway. Supported platforms are now stated: Linux (tested, development and production), macOS and Windows (development, not systematically tested)  
 ✅ Fixed `make clean` always answering "Clean cancelled" on Linux (its recipe used bash syntax under `/bin/sh`); it now runs `./lamp.sh clean`, which also offers to delete the database data  
-✅ `lamp.sh` and `init.sh` show correct addresses for ports bound to an IP (`HTTP_PORT=127.0.0.1:8080` displayed `http://localhost:127.0.0.1:8080`); `./lamp.sh info` no longer shows `localhost:` as the host address of an unpublished database
+✅ `lamp.sh` and `init.sh` show correct addresses for ports bound to an IP (`HTTP_PORT=127.0.0.1:8080` displayed `http://localhost:127.0.0.1:8080`); `./lamp.sh info` no longer shows `localhost:` as the host address of an unpublished database  
+✅ Documentation starts and restarts projects with `./lamp.sh` instead of `docker compose up -d`, which ignores the proxy, MySQL port and production overrides (the troubleshooting steps for `MYSQL_PORT` never published the port); direct `docker compose` usage points to `COMPOSE_FILE`
 
 ### 2.2.0 - 2026-07-15
 ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance  

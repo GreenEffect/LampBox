@@ -17,7 +17,7 @@ nano .env
 
 ### 3️⃣ Start
 ```bash
-docker compose up -d
+./lamp.sh start
 ```
 
 🎉 **Done!** Access your site at http://localhost:8080

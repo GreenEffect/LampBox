@@ -47,7 +47,7 @@ cd LampBox/
 ./init.sh
 
 # 3. Start the stack
-docker compose up -d
+./lamp.sh start
 
 # 4. Access your site
 # → http://localhost:8080
@@ -162,7 +162,9 @@ Using the `lamp.sh` helper script:
 ./lamp.sh ssl            # Generate SSL certificates
 ```
 
-Or use Docker Compose directly:
+Or use Docker Compose directly. It only reads `docker-compose.yml`: list the
+overrides you need (proxy, MySQL port, production) in `COMPOSE_FILE` in `.env`
+(see `sample.env`).
 
 ```bash
 docker compose up -d              # Start
