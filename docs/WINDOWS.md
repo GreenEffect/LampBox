@@ -322,21 +322,20 @@ Installer **Windows Terminal** depuis le Microsoft Store:
 
 Installer les extensions VS Code:
 - **Docker** (Microsoft)
-- **Remote - Containers** (Microsoft)
+- **Dev Containers** (Microsoft, anciennement "Remote - Containers")
 - **PHP Intelephense** (pour PHP)
 
 ### 4. Chemins de fichiers
 
-Sur Windows, utilisez:
-- `\` pour les chemins Windows natifs
-- `/` dans les chemins Docker (containers)
+Dans `.env`, utilisez toujours `/`, y compris pour les chemins de l'hôte :
+Docker Compose les accepte sous Windows, alors que `lamp.sh` lit `.env` avec
+bash, qui supprime les `\` (`.\www` y devient `.www`).
 
-Exemple dans .env:
 ```bash
-# Windows natif (rarement nécessaire)
-DOCUMENT_ROOT=.\www
+# Chemin sur l'hôte (Windows compris)
+DOCUMENT_ROOT=./www
 
-# Docker (déjà correct)
+# Chemin dans le conteneur
 APACHE_DOCUMENT_ROOT=/var/www/html
 ```
 
@@ -350,7 +349,8 @@ APACHE_DOCUMENT_ROOT=/var/www/html
 REM Redémarrer Docker
 REM Clic droit sur l'icône Docker → Restart
 
-REM Nettoyer Docker
+REM Nettoyer Docker (attention : supprime aussi les images de retour arrière
+REM <projet>-webserver:<version>-pre-update et celles des projets arrêtés)
 docker system prune -a
 
 REM Voir les conteneurs
