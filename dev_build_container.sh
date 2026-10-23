@@ -72,7 +72,11 @@ check_db() {
 # deleted from a throwaway container; the .env must stay until 'down' ran.
 cleanup() {
     echo "### cleaning up $project"
-    dc run --rm --no-deps -T --entrypoint sh -v "$PWD/$dir:/combination" database \
+    # Git Bash would rewrite "/c/...:/combination" as a Windows path list and
+    # mount a stray "<dir>;C" directory: give Docker a C:/... path, unconverted
+    local src="$PWD/$dir"
+    command -v cygpath >/dev/null && src=$(cygpath -m "$src")
+    MSYS_NO_PATHCONV=1 dc run --rm --no-deps -T --entrypoint sh -v "$src:/combination" database \
         -c 'rm -rf /combination/data /combination/logs' >/dev/null 2>&1
     dc down --rmi all >/dev/null 2>&1
     rm -rf "$dir" 2>/dev/null
