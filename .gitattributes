@@ -1,0 +1,9 @@
+# Scripts, Dockerfiles, configuration and .env files are read by bash or
+# inside Linux containers: keep LF endings even on a Windows checkout with
+# core.autocrlf=true (a CRLF lamp.sh fails with "bad interpreter").
+* text=auto eol=lf
+
+# cmd.exe can miss goto labels in LF files.
+*.bat text eol=crlf
+
+*.png binary

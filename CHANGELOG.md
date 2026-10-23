@@ -18,6 +18,7 @@ Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
 ✅ `sample.env` documents single-quoting values that contain `$`  
 ✅ New `docs/MIGRATION.md` for projects created with older versions (data directory, database port, PHP versions, production mode, backups)  
 ✅ Shell scripts are now executable (`./init.sh`, `./lamp.sh` failed with "Permission denied" on a fresh clone)  
+✅ New `.gitattributes`: files keep LF endings on a Windows clone (`core.autocrlf=true` turned `lamp.sh`, Dockerfiles and `.env` into CRLF, which bash and the containers reject); `init.bat` gets CRLF  
 ✅ Fixed `lamp.sh` (start check, `clean`, `clean-db`) and `init.sh` targeting `data/mysql` instead of the configured `MYSQL_DATA_DIR` (default `data/mysql-<DATABASE>`); `clean-db` now deletes through a database container (the files belong to the container's mysql user) and no longer recreates a `.gitkeep` that prevented MySQL from initializing; the engine marker is stored next to the data directory and written automatically  
 ✅ Images are tagged per version (`<project>-webserver:<PHPVERSION>`, `<project>-database:<DATABASE>`) and `./lamp.sh start` builds them (`up --build`, cached): after changing `DATABASE` or `PHPVERSION`, the single per-project image was reused and the old engine initialized the new data directory  
 ✅ Removed end-of-life MariaDB 10.3, 10.4, 10.5 and 10.6 (`mariadb103`-`mariadb106`)  
