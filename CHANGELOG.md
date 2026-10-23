@@ -1,7 +1,8 @@
 # Changelog - LampBox
 
-### 2.3.0 - 2026-10-22
-Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619)
+### 3.0.0 - 2026-10-23
+Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619).
+Major version: end-of-life PHP and database versions and `init.bat` are removed; to update a project created with an older LampBox, see `docs/MIGRATION.md`
 
 ✅ **Production mode**: `LAMPBOX_ENV=production` applies `docker-compose.production.yml` and `config/php/php-production.ini` (errors logged but not displayed, Xdebug off, `expose_php` off, strict HttpOnly sessions); an invalid value stops `lamp.sh`  
 ✅ **phpMyAdmin**: access rule set by `PHPMYADMIN_REQUIRE` (`all granted` in development, `all denied` in production, or e.g. `PHPMYADMIN_REQUIRE='ip 203.0.113.10'`); root login disabled (`AllowRoot = false`); updated from 5.2.1 to 5.2.3  

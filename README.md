@@ -2,7 +2,7 @@
   <img src="docs/LampBox_Logo.png" alt="LampBox Logo" width="200">
 </div>
 
-# 🐳 LampBox v2.3.0
+# 🐳 LampBox v3.0.0
 
 Modern, cross-platform LAMP stack with Docker, for local development and production.
 
@@ -384,7 +384,7 @@ sed -i 's/^GID=/GROUP_ID=/' .env
 1. **Git Bash** (recommended) - installed with Git for Windows
 2. **WSL2** - Linux experience on Windows
 
-`init.bat` was removed in 2.3.0. Plain `docker compose` commands also work
+`init.bat` was removed in 3.0.0. Plain `docker compose` commands also work
 from CMD or PowerShell once `.env` exists.
 
 See [Windows Guide](docs/WINDOWS.md) for detailed instructions.
@@ -423,9 +423,9 @@ Also for production:
 Updating a project created with an older LampBox: see the
 [Migration Guide](docs/MIGRATION.md).
 
-## 🆚 What's New in v2.3.0
+## 🆚 What's New in v3.0.0
 
-### Version 2.3.0 (2026-10-22)
+### Version 3.0.0 (2026-10-23)
 - ✅ **Production mode** (`LAMPBOX_ENV=production`): PHP errors hidden, Xdebug off, no `X-Powered-By`, phpMyAdmin denied by default
 - ✅ phpMyAdmin access configurable (`PHPMYADMIN_REQUIRE`), root login disabled, real client IP behind Traefik
 - ✅ New `./lamp.sh update`: apply a PHP security release to the webserver only, with rollback image

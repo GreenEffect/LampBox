@@ -1,4 +1,4 @@
-# 🔄 Migrating an Existing Project to LampBox 2.3
+# 🔄 Migrating an Existing Project to LampBox 3.0
 
 LampBox is copied into each project, so older projects keep the files they were
 created with. This guide brings a project installed with LampBox 1.x–2.2 up to

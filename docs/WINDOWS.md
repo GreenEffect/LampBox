@@ -1,12 +1,12 @@
-# Windows Setup Guide - LampBox v2.3.0
+# Windows Setup Guide - LampBox v3.0.0
 
 ## 🪟 Guide Spécifique Windows
 
-Ce guide vous aide à configurer et utiliser LampBox v2.3.0 sur Windows.
+Ce guide vous aide à configurer et utiliser LampBox v3.0.0 sur Windows.
 
 Windows est pris en charge pour le **développement**, via Git Bash ou WSL2 :
 les scripts (`init.sh`, `lamp.sh`) sont en bash. Ils ne sont pas testés
-systématiquement sous Windows. `init.bat` a été supprimé en 2.3.0.
+systématiquement sous Windows. `init.bat` a été supprimé en 3.0.0.
 
 ---
 

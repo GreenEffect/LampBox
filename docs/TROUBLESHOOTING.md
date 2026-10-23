@@ -1,6 +1,6 @@
 # 🔧 Troubleshooting Guide
 
-Common issues and solutions for LampBox v2.3.0.
+Common issues and solutions for LampBox v3.0.0.
 
 ## 📑 Table of Contents
 
@@ -465,7 +465,7 @@ rm .env
    - Navigate to project: `cd /mnt/c/path/to/LampBox`
    - Run: `./init.sh`
 
-`init.bat` was removed in 2.3.0: the scripts need bash.
+`init.bat` was removed in 3.0.0: the scripts need bash.
 
 ### lamp.sh Commands Don't Work
 
