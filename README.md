@@ -219,6 +219,11 @@ PROJECT_DOMAIN=myproject.local      # must be unique per project
 
 `./lamp.sh start` also runs `proxy-up` automatically if Traefik isn't up yet.
 
+Traefik reads its configuration and certificate from the `traefik/` directory
+of the project that started it. Before deleting that project, run
+`./lamp.sh proxy-down && ./lamp.sh proxy-up` from another one: otherwise
+Traefik cannot restart (after a reboot, for instance).
+
 **Pros:** Clean URLs, HTTPS by default, unlimited parallel projects  
 **Cons:** Requires hosts file modification
 

@@ -577,6 +577,15 @@ docker inspect <project>-webserver --format '{{index .Config.Labels "traefik.htt
 # → Host(`myproject.local`); empty = the project was not started with the proxy override
 ```
 
+**Every `*.local` site is down after a reboot, `lampbox-traefik` has exited**
+("OCI runtime create failed"): the project Traefik was started from has been
+deleted, and with it the `traefik/` files it mounts. Start it again from an
+existing project:
+
+```bash
+./lamp.sh proxy-down && ./lamp.sh proxy-up
+```
+
 **Browser shows a certificate warning:** expected with the self-signed
 `*.local` certificate. Accept it, or generate a trusted one with
 [mkcert](https://github.com/FiloSottile/mkcert) into `traefik/certs/`.

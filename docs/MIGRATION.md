@@ -70,7 +70,15 @@ immediate.
 
 7. **Going back**: `./lamp.sh stop` in the new project, `docker compose up -d`
    in the old one. Delete the old directory once the new site has run for a
-   while.
+   while. If the shared Traefik was started from the old project, move it to
+   the new one first: Traefik reads its configuration from the `traefik/`
+   directory of the project that started it, and could not restart (after a
+   reboot, for instance) once that directory is gone.
+
+   ```bash
+   docker inspect lampbox-traefik --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'
+   cd /path/to/new-project && ./lamp.sh proxy-down && ./lamp.sh proxy-up
+   ```
 
 ---
 
