@@ -131,8 +131,20 @@ print_check "Port availability"
 PORTS_TO_CHECK=(80 443 8080 8443 3306)
 PORTS_IN_USE=()
 
+# ss on recent Linux, lsof on macOS, netstat -an elsewhere (Windows included:
+# its netstat has no -tuln)
+port_in_use() {
+    if command_exists ss; then
+        ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE "[:.]$1\$"
+    elif command_exists lsof; then
+        lsof -Pi :"$1" -sTCP:LISTEN -t &> /dev/null
+    else
+        netstat -an 2>/dev/null | grep -iE 'listen' | grep -qE "[:.]$1[[:space:]]"
+    fi
+}
+
 for port in "${PORTS_TO_CHECK[@]}"; do
-    if lsof -Pi :$port -sTCP:LISTEN -t &> /dev/null 2>&1 || netstat -tuln 2>/dev/null | grep -q ":$port "; then
+    if port_in_use "$port"; then
         PORTS_IN_USE+=($port)
     fi
 done
@@ -149,7 +161,8 @@ fi
 run_check
 print_check "Disk space"
 AVAILABLE_SPACE=$(df -h . | awk 'NR==2 {print $4}')
-AVAILABLE_SPACE_GB=$(df -BG . | awk 'NR==2 {print $4}' | sed 's/G//')
+# -P -k is POSIX (df -BG is GNU only and fails on macOS)
+AVAILABLE_SPACE_GB=$(df -Pk . | awk 'NR==2 {print int($4 / 1024 / 1024)}')
 
 if [ "$AVAILABLE_SPACE_GB" -ge 5 ]; then
     print_ok "$AVAILABLE_SPACE available"

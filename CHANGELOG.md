@@ -42,6 +42,7 @@ Major version: end-of-life PHP and database versions and `init.bat` are removed.
 ✅ Fixed examples: Laravel and Symfony mount the whole project and serve `public/` (`DOCUMENT_ROOT=./www/public` left `vendor/` outside the container); the multi-subdomain example uses direct port mode (Traefik only routes `PROJECT_DOMAIN`); microservices call each other by container name (`*.local` names do not resolve inside containers)  
 ✅ Removed `PROXY_NETWORK` from `sample.env`: only `lamp.sh` read it (to create the network) while the compose files and Traefik always use `lampbox_web`, so changing it broke proxy mode; an existing value is now ignored  
 ✅ Documentation checked against the code: Xdebug step debugging needs the `xdebug.mode=debug` lines of `php.ini` (the default `develop` mode has no breakpoints); removed the obsolete phpMyAdmin "permissions" fix (the check is disabled); Traefik routing is checked through the container label (its log does not list routers); WSL2 projects belong in the Linux filesystem; `resolvectl` replaces `systemd-resolve`  
+✅ `check-system.sh` really checks the ports (with `ss`, `lsof` or `netstat -an`): it reported "All common ports are available" when `lsof` and `netstat -tuln` were missing, as on recent Linux distributions and on Windows; the disk check also works on macOS  
 ✅ Fixed the user ID instructions (re-running `init.sh` does not change `USER_ID` in an existing `.env`, and Compose does not run `$(id -u)` in `.env`); the quick start warns that a new `DATABASE` starts on an empty data directory
 
 ### 2.2.0 - 2026-07-15
