@@ -2,7 +2,7 @@
 
 ## 🚀 Get Started in 3 Steps
 
-### Linux / macOS / Windows (Git Bash)
+### Linux / macOS / Windows (Git Bash or WSL2)
 
 ### 1️⃣ Initialize
 ```bash
@@ -17,31 +17,13 @@ nano .env
 
 ### 3️⃣ Start
 ```bash
-docker compose up -d
+./lamp.sh start
 ```
 
 🎉 **Done!** Access your site at http://localhost:8080
 
----
-
-### Windows (Command Prompt) - Alternative
-
-### 1️⃣ Initialize
-```batch
-init.bat
-```
-
-### 2️⃣ Configure (Optional)
-```batch
-notepad .env
-```
-
-### 3️⃣ Start
-```batch
-docker compose up -d
-```
-
-**Note for Windows users:** See [WINDOWS.md](WINDOWS.md) for detailed Windows guide.
+**Note for Windows users:** run these commands in Git Bash or WSL2 (the scripts
+need bash). See [WINDOWS.md](WINDOWS.md) for the detailed Windows guide.
 
 ---
 
@@ -68,6 +50,12 @@ docker compose up -d
 
 # Open MySQL shell
 ./lamp.sh mysql
+
+# Dump all databases to data/db-dumps/
+./lamp.sh dump
+
+# Apply a PHP security release (webserver only, database untouched)
+./lamp.sh update
 
 # Show connection info
 ./lamp.sh info
@@ -123,7 +111,7 @@ its domain, so multiple projects run in parallel without port conflicts.
 cd ~/projects/project1
 git clone https://github.com/GreenEffect/LampBox.git .
 ./init.sh
-# Edit .env: HTTP_PORT=8080, COMPOSE_PROJECT_NAME=project1
+# Edit .env: HTTP_PORT=8080, HTTPS_PORT=8443, COMPOSE_PROJECT_NAME=project1
 ./lamp.sh start
 ```
 
@@ -132,7 +120,8 @@ git clone https://github.com/GreenEffect/LampBox.git .
 cd ~/projects/project2
 git clone https://github.com/GreenEffect/LampBox.git .
 ./init.sh
-# Edit .env: HTTP_PORT=8081, COMPOSE_PROJECT_NAME=project2
+# Edit .env: HTTP_PORT=8081, HTTPS_PORT=8444, COMPOSE_PROJECT_NAME=project2
+# (HTTPS_PORT is always published: it must differ between projects too)
 ./lamp.sh start
 ```
 
@@ -160,13 +149,22 @@ Both projects now run simultaneously! 🎊
 ### Change PHP Version
 ```bash
 # In .env
-PHPVERSION=php83  # Options: php8, php81, php82, php83, php84, php85
+PHPVERSION=php83  # Options: php82, php83, php84, php85
+
+# Then rebuild the webserver for that version
+./lamp.sh restart
 ```
 
 ### Change Database
 ```bash
+# Keep a dump first: each engine uses its own data directory, so the new one
+# starts EMPTY (the previous data stays in data/mysql-<old DATABASE>)
+./lamp.sh dump
+
 # In .env
-DATABASE=mysql8   # Options: mysql8, mysql84, mariadb103-106, mariadb1011, mariadb118, mariadb121
+DATABASE=mysql84  # Options: mysql84, mysql97, mariadb1011, mariadb114, mariadb118, mariadb123
+
+./lamp.sh restart
 ```
 
 ### Change Ports
@@ -188,6 +186,15 @@ MYSQL_ROOT_PASSWORD=mypassword
 MYSQL_DATABASE=mydatabase
 MYSQL_USER=myuser
 MYSQL_PASSWORD=mypassword
+# Values containing '$' must be single-quoted: MYSQL_PASSWORD='abc$xyz'
+```
+
+### Production Settings
+```bash
+# In .env: hide PHP errors, turn Xdebug off, deny phpMyAdmin
+LAMPBOX_ENV=production
+PHPMYADMIN_REQUIRE=        # empty = "all denied"
+#PHPMYADMIN_REQUIRE='ip 203.0.113.10'   # or allow your IP (keep the quotes)
 ```
 
 ---
@@ -202,9 +209,12 @@ HTTP_PORT=8081
 
 ### Permission Denied
 ```bash
-# Run init.sh again to fix USER_ID/GROUP_ID
-./init.sh
-./lamp.sh rebuild
+# Linux/macOS: Apache must run with your user ID. In .env:
+USER_ID=1000     # output of: id -u
+GROUP_ID=1000    # output of: id -g
+
+# Then restart: the containers are recreated with these IDs
+./lamp.sh restart
 ```
 
 ### Database Won't Start
@@ -212,8 +222,8 @@ HTTP_PORT=8081
 # Check logs
 ./lamp.sh logs database
 
-# Clean and restart
-./lamp.sh clean
+# Clean the database data (removes it!) and restart
+./lamp.sh clean-db
 ./lamp.sh start
 ```
 
@@ -227,17 +237,6 @@ HTTP_PORT=8081
 ```
 
 ---
-
-## 🧪 Testing Different Configurations
-
-Want to test different PHP or database versions? Use the test scripts:
-
-```bash
-cd test/
-./test-config.sh php85 mariadb121 9000 9300
-```
-
-**Note for Windows users:** These scripts require Git Bash or WSL2. See [test/README.md](../test/README.md) for details.
 
 ## 📚 Need More Help?
 

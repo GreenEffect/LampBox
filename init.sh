@@ -53,6 +53,28 @@ command_exists() {
     command -v "$1" &> /dev/null
 }
 
+# Address of a published port as shown to the user: "8080" -> localhost:8080,
+# "127.0.0.1:18080" -> 127.0.0.1:18080, "0.0.0.0:8080" -> localhost:8080
+host_address() {
+    case "$1" in
+        0.0.0.0:*) echo "localhost:${1#0.0.0.0:}" ;;
+        *:*)       echo "$1" ;;
+        *)         echo "localhost:$1" ;;
+    esac
+}
+
+# Load .env. It is sourced by bash: an unquoted value with spaces runs as a
+# command, so check it first and point to the faulty line.
+load_env() {
+    local err
+    if ! err=$(bash -ec "source ./.env" 2>&1 >/dev/null); then
+        print_error ".env could not be loaded: ${err%%$'\n'*}"
+        print_error "Quote values that contain spaces, e.g. PHPMYADMIN_REQUIRE='ip 203.0.113.10'"
+        exit 1
+    fi
+    source .env
+}
+
 # Check prerequisites
 check_prerequisites() {
     print_header "Checking prerequisites"
@@ -99,7 +121,9 @@ create_env_file() {
     
     if [ -f .env ]; then
         print_warning ".env file already exists!"
-        read -p "Do you want to overwrite it? (y/N): " -n 1 -r
+        # No terminal (closed stdin): read fails, which set -e must not turn
+        # into a silent exit; an empty answer keeps the file
+        read -p "Do you want to overwrite it? (y/N): " -n 1 -r || true
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             print_info "Keeping existing .env file"
@@ -115,17 +139,18 @@ create_env_file() {
     # Copy sample.env to .env
     cp sample.env .env
     
-    # Generate phpMyAdmin Blowfish secret if not set
-    if command_exists openssl || command_exists head; then
-        BLOWFISH_SECRET=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | xxd -p 2>/dev/null || echo "$(date +%s)_random_$(($RANDOM$RANDOM))")
-        # Escape special characters for sed
-        BLOWFISH_SECRET_ESCAPED=$(echo "$BLOWFISH_SECRET" | sed 's/[\/&]/\\&/g')
+    # Generate phpMyAdmin Blowfish secret: phpMyAdmin expects exactly 32
+    # bytes and warns otherwise, so 16 random bytes in hex
+    BLOWFISH_SECRET=$(openssl rand -hex 16 2>/dev/null || od -An -N16 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')
+    if [ ${#BLOWFISH_SECRET} -eq 32 ]; then
         if [ "$OS" = "Mac" ]; then
-            sed -i '' "s/PHPMYADMIN_BLOWFISH_SECRET=$/PHPMYADMIN_BLOWFISH_SECRET=${BLOWFISH_SECRET_ESCAPED}/" .env
+            sed -i '' "s/PHPMYADMIN_BLOWFISH_SECRET=$/PHPMYADMIN_BLOWFISH_SECRET=${BLOWFISH_SECRET}/" .env
         else
-            sed -i "s/PHPMYADMIN_BLOWFISH_SECRET=$/PHPMYADMIN_BLOWFISH_SECRET=${BLOWFISH_SECRET_ESCAPED}/" .env
+            sed -i "s/PHPMYADMIN_BLOWFISH_SECRET=$/PHPMYADMIN_BLOWFISH_SECRET=${BLOWFISH_SECRET}/" .env
         fi
         print_info "✓ Generated phpMyAdmin Blowfish secret"
+    else
+        print_warning "Could not generate the phpMyAdmin Blowfish secret: set PHPMYADMIN_BLOWFISH_SECRET (32 characters) in .env"
     fi
     
     # Update UID/GID based on OS
@@ -156,12 +181,17 @@ create_env_file() {
 # Create necessary directories
 create_directories() {
     print_header "Creating directories"
-    
+
+    # Database directories, with the same defaults as docker-compose.yml
+    load_env
+    MYSQL_DATA_DIR="${MYSQL_DATA_DIR:-./data/mysql-${DATABASE}}"
+    MYSQL_LOG_DIR="${MYSQL_LOG_DIR:-./logs/mysql-${DATABASE}}"
+
     local dirs=(
         "www"
-        "data/mysql"
+        "$MYSQL_DATA_DIR"
         "logs/apache2"
-        "logs/mysql"
+        "$MYSQL_LOG_DIR"
         "config/ssl"
         "config/initdb"
         "traefik/certs"
@@ -186,9 +216,9 @@ set_permissions() {
         print_info "No manual permission configuration needed"
     else
         # Set permissions for Linux/Mac
-        if [ -d "data/mysql" ]; then
-            chmod 755 data/mysql 2>/dev/null || true
-            print_info "✓ Set permissions for data/mysql"
+        if [ -d "$MYSQL_DATA_DIR" ]; then
+            chmod 755 "$MYSQL_DATA_DIR" 2>/dev/null || true
+            print_info "✓ Set permissions for $MYSQL_DATA_DIR"
         fi
         
         if [ -d "www" ]; then
@@ -218,12 +248,13 @@ show_summary() {
     
     # Load .env to show current config
     if [ -f .env ]; then
-        source .env
+        load_env
         
         echo -e "${BLUE}Operating System:${NC} $OS"
         echo -e "${BLUE}Project:${NC} $COMPOSE_PROJECT_NAME"
         echo -e "${BLUE}PHP Version:${NC} $PHPVERSION"
         echo -e "${BLUE}Database:${NC} $DATABASE"
+        echo -e "${BLUE}Environment:${NC} ${LAMPBOX_ENV:-development}"
         echo -e "${BLUE}Reverse Proxy:${NC} $USE_REVERSE_PROXY"
         
         if [ "$OS" != "Windows" ]; then
@@ -233,8 +264,8 @@ show_summary() {
         if [ "$USE_REVERSE_PROXY" = "true" ]; then
             echo -e "${BLUE}Domain:${NC} https://$PROJECT_DOMAIN"
         else
-            echo -e "${BLUE}HTTP Port:${NC} http://localhost:$HTTP_PORT"
-            echo -e "${BLUE}HTTPS Port:${NC} https://localhost:$HTTPS_PORT"
+            echo -e "${BLUE}HTTP Port:${NC} http://$(host_address "${HTTP_PORT:-8080}")"
+            echo -e "${BLUE}HTTPS Port:${NC} https://$(host_address "${HTTPS_PORT:-8443}")"
         fi
         
         echo ""
@@ -245,7 +276,7 @@ show_summary() {
 show_next_steps() {
     print_header "Next Steps"
     
-    source .env
+    load_env
     
     echo "1. Review and customize your .env file if needed:"
     if [ "$OS" = "Windows" ]; then
@@ -277,13 +308,13 @@ show_next_steps() {
         echo -e "   ${YELLOW}https://$PROJECT_DOMAIN${NC}"
     else
         echo "2. Start your stack:"
-        echo -e "   ${YELLOW}docker compose up -d${NC}"
+        echo -e "   ${YELLOW}./lamp.sh start${NC}"
         echo ""
         echo "3. Access your site:"
-        echo -e "   ${YELLOW}http://localhost:$HTTP_PORT${NC}"
+        echo -e "   ${YELLOW}http://$(host_address "${HTTP_PORT:-8080}")${NC}"
         echo ""
         echo "4. Access phpMyAdmin:"
-        echo -e "   ${YELLOW}http://localhost:$HTTP_PORT/${COMPOSE_PROJECT_NAME}-mysql${NC}"
+        echo -e "   ${YELLOW}http://$(host_address "${HTTP_PORT:-8080}")/${COMPOSE_PROJECT_NAME}-mysql${NC}"
     fi
     
     echo ""

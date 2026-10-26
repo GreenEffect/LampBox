@@ -1,10 +1,10 @@
 # Makefile for LampBox
 # Alternative to lamp.sh for those who prefer make commands
 
-.PHONY: help init check start stop restart status logs shell mysql rebuild clean ssl info start-proxy proxy-up proxy-down
+.PHONY: help init check start stop restart status logs shell mysql rebuild update clean ssl info start-proxy proxy-up proxy-down
 
-# Load environment variables
-include .env
+# Load environment variables (optional: 'make init' creates .env)
+-include .env
 export
 
 # Default target
@@ -36,12 +36,10 @@ check: ## Check system requirements
 start: ## Start the stack (direct port mode)
 	@echo "$(GREEN)Starting LampBox...$(NC)"
 	@./lamp.sh start
-	@echo "$(BLUE)Access your site at: http://localhost:$(HTTP_PORT)$(NC)"
 
 start-proxy: ## Start the stack behind the shared Traefik reverse proxy (domain mode)
 	@echo "$(GREEN)Starting LampBox behind Traefik...$(NC)"
 	@./lamp.sh start --proxy
-	@echo "$(BLUE)Access your site at: https://$(PROJECT_DOMAIN)$(NC)"
 
 proxy-up: ## Start the shared Traefik reverse proxy (owns ports 80/443)
 	@echo "$(GREEN)Starting shared Traefik reverse proxy...$(NC)"
@@ -52,9 +50,7 @@ proxy-down: ## Stop the shared Traefik reverse proxy
 	@./lamp.sh proxy-down
 
 stop: ## Stop the stack
-	@echo "$(YELLOW)Stopping LampBox...$(NC)"
-	@docker compose -f docker-compose.yml down
-	@echo "$(GREEN)✓ Stack stopped$(NC)"
+	@./lamp.sh stop
 
 restart: stop start ## Restart the stack
 
@@ -72,28 +68,18 @@ shell: ## Open bash shell in webserver container
 	@docker compose exec webserver bash
 
 mysql: ## Open MySQL shell
-	@echo "$(GREEN)Opening MySQL shell...$(NC)"
-	@docker compose exec database mysql -u root -p$(MYSQL_ROOT_PASSWORD)
+	@./lamp.sh mysql
 
 ##@ Maintenance
 
-rebuild: ## Rebuild all containers from scratch
-	@echo "$(YELLOW)Rebuilding LampBox...$(NC)"
-	@docker compose -f docker-compose.yml down
-	@docker compose build --no-cache
-	@echo "$(GREEN)✓ Rebuild complete$(NC)"
-	@make start
+rebuild: ## Rebuild all containers from scratch (pulls updated base images)
+	@./lamp.sh rebuild
+
+update: ## Pull the latest PHP image and recreate the webserver only
+	@./lamp.sh update
 
 clean: ## Remove all containers, networks, and volumes (⚠️  destructive!)
-	@echo "$(YELLOW)⚠️  WARNING: This will remove all data!$(NC)"
-	@read -p "Are you sure? [y/N] " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker compose -f docker-compose.yml down -v; \
-		echo "$(GREEN)✓ Cleaned$(NC)"; \
-	else \
-		echo "$(YELLOW)Clean cancelled$(NC)"; \
-	fi
+	@./lamp.sh clean
 
 ##@ SSL
 
@@ -103,35 +89,8 @@ ssl: ## Generate the shared Traefik TLS certificate (*.local)
 
 ##@ Information
 
-info: ## Show connection information
-	@echo ""
-	@echo "$(BLUE)===================================================================$(NC)"
-	@echo "$(BLUE)Connection Information$(NC)"
-	@echo "$(BLUE)===================================================================$(NC)"
-	@echo ""
-	@echo "$(GREEN)Project:$(NC) $(COMPOSE_PROJECT_NAME)"
-	@echo "$(GREEN)PHP Version:$(NC) $(PHPVERSION)"
-	@echo "$(GREEN)Database:$(NC) $(DATABASE)"
-	@echo ""
-	@if [ "$(USE_REVERSE_PROXY)" = "true" ]; then \
-		echo "$(GREEN)Website:$(NC) https://$(PROJECT_DOMAIN)"; \
-		echo "$(GREEN)phpMyAdmin:$(NC) https://$(PROJECT_DOMAIN)/$(COMPOSE_PROJECT_NAME)-mysql"; \
-	else \
-		echo "$(GREEN)Website (HTTP):$(NC) http://localhost:$(HTTP_PORT)"; \
-		echo "$(GREEN)Website (HTTPS):$(NC) https://localhost:$(HTTPS_PORT)"; \
-		echo "$(GREEN)phpMyAdmin:$(NC) http://localhost:$(HTTP_PORT)/$(COMPOSE_PROJECT_NAME)-mysql"; \
-	fi
-	@if [ -n "$(MYSQL_PORT)" ]; then \
-		echo "$(GREEN)MySQL:$(NC) localhost:$(MYSQL_PORT)"; \
-	fi
-	@echo ""
-	@echo "$(BLUE)Database Credentials:$(NC)"
-	@echo "  Host: $(COMPOSE_PROJECT_NAME)-database"
-	@echo "  Root Password: $(MYSQL_ROOT_PASSWORD)"
-	@echo "  Database: $(MYSQL_DATABASE)"
-	@echo "  User: $(MYSQL_USER)"
-	@echo "  Password: $(MYSQL_PASSWORD)"
-	@echo ""
+info: ## Show connection information (environment, phpMyAdmin rule, credentials)
+	@./lamp.sh info
 
 ##@ Development
 
@@ -149,17 +108,16 @@ php: ## Run PHP command (use: make php CMD="artisan migrate")
 
 ##@ Database
 
-db-backup: ## Backup database to backups/$(date).sql
-	@echo "$(GREEN)Backing up database...$(NC)"
-	@mkdir -p backups
-	@docker compose exec -T database mysqldump -u root -p$(MYSQL_ROOT_PASSWORD) --all-databases > backups/backup-$$(date +%Y%m%d-%H%M%S).sql
-	@echo "$(GREEN)✓ Database backed up to backups/backup-$$(date +%Y%m%d-%H%M%S).sql$(NC)"
+db-backup: ## Dump all databases to data/db-dumps/ (same as ./lamp.sh dump)
+	@./lamp.sh dump
 
-db-restore: ## Restore database from backup (use: make db-restore FILE=backups/backup.sql)
+db-restore: ## Restore a dump, .sql or .sql.gz (use: make db-restore FILE=data/db-dumps/x.sql.gz)
 	@if [ -z "$(FILE)" ]; then \
-		echo "$(YELLOW)Usage: make db-restore FILE=backups/backup.sql$(NC)"; \
+		echo "$(YELLOW)Usage: make db-restore FILE=data/db-dumps/<dump>.sql.gz$(NC)"; \
 		exit 1; \
 	fi
 	@echo "$(GREEN)Restoring database from $(FILE)...$(NC)"
-	@docker compose exec -T database mysql -u root -p$(MYSQL_ROOT_PASSWORD) < $(FILE)
+	@case "$(FILE)" in *.gz) gzip -dc "$(FILE)" ;; *) cat "$(FILE)" ;; esac \
+		| docker compose exec -T database sh -c \
+		'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" exec "$$(command -v mariadb || command -v mysql)" -uroot'
 	@echo "$(GREEN)✓ Database restored$(NC)"

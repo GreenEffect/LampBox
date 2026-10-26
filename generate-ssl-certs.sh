@@ -4,7 +4,8 @@
 # SSL Certificate Generator for LampBox (direct Apache HTTPS mode)
 # ==============================================================================
 # This script generates a self-signed certificate for the OPTIONAL direct
-# Apache HTTPS access (the commented *:443 vhost in config/vhosts/default.conf).
+# Apache HTTPS access: the *:443 vhost of config/vhosts/default.conf is
+# enabled once config/ssl/cert.pem and cert-key.pem exist (restart needed).
 #
 # For reverse proxy mode, certificates are handled by the shared Traefik stack:
 #   ./traefik/generate-certs.sh   (or  ./lamp.sh ssl)

@@ -2,31 +2,40 @@
   <img src="docs/LampBox_Logo.png" alt="LampBox Logo" width="200">
 </div>
 
-# 🐳 LampBox v2.2.0
+# 🐳 LampBox v3.0.0
 
-Modern, cross-platform LAMP development environment with Docker.
+Modern, cross-platform LAMP stack with Docker, for local development and production.
 
-![PHP](https://img.shields.io/badge/PHP-8.0%20to%208.5-777BB4?logo=php)
-![MySQL](https://img.shields.io/badge/MySQL-8.0%2C%208.4-4479A1?logo=mysql)
-![MariaDB](https://img.shields.io/badge/MariaDB-10.3--12.1-003545?logo=mariadb)
+![PHP](https://img.shields.io/badge/PHP-8.2%20to%208.5-777BB4?logo=php)
+![MySQL](https://img.shields.io/badge/MySQL-8.4%2C%209.7-4479A1?logo=mysql)
+![MariaDB](https://img.shields.io/badge/MariaDB-10.11--12.3-003545?logo=mariadb)
 ![Apache](https://img.shields.io/badge/Apache-2.4-D22128?logo=apache)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)
 
 ## ✨ Features
 
-- 🚀 **Multiple PHP versions** (8.0, 8.1, 8.2, 8.3, 8.4, 8.5)
-- 💾 **Multiple databases** (MySQL 8.0, 8.4, MariaDB 10.3-10.6, 10.11, 11.8, 12.1)
-- 🔒 **HTTPS/SSL** support with auto-generated certificates
+- 🚀 **Multiple PHP versions** (8.2, 8.3, 8.4, 8.5)
+- 💾 **Multiple databases** (MySQL 8.4, 9.7, MariaDB 10.11, 11.4, 11.8, 12.3)
+- 🔒 **HTTPS/SSL**: automatic behind Traefik, or on `HTTPS_PORT` once `./generate-ssl-certs.sh` has created a certificate
 - 🎯 **Dual access modes**: Direct ports or shared reverse proxy (Traefik, multi-project)
 - 🔧 **phpMyAdmin** included and pre-configured
-- 🌍 **Cross-platform**: Linux, macOS, Windows (Git Bash/WSL2/CMD)
+- 🔐 **Production mode**: hardened PHP settings, protected phpMyAdmin, safe PHP updates and consistent database dumps
+- 🌍 **Cross-platform**: Linux, macOS, Windows (Git Bash/WSL2)
 - 📦 **Isolated projects**: Run multiple LAMP stacks simultaneously
 - ⚡ **Auto-configuration**: Permissions and secrets handled automatically
 
 ## 📋 Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running
-- **Windows users**: [Git Bash](https://git-scm.com/downloads) recommended (or WSL2)
+- **Windows users**: [Git Bash](https://git-scm.com/downloads) or WSL2 (the scripts need bash)
+
+### Supported Platforms
+
+| Platform | Use | Tested |
+|---|---|---|
+| Linux | development and production | yes |
+| macOS | development | not systematically |
+| Windows (Git Bash or WSL2) | development | not systematically |
 
 ## 🚀 Quick Start (30 seconds)
 
@@ -38,7 +47,7 @@ cd LampBox/
 ./init.sh
 
 # 3. Start the stack
-docker compose up -d
+./lamp.sh start
 
 # 4. Access your site
 # → http://localhost:8080
@@ -47,7 +56,7 @@ docker compose up -d
 
 **Default credentials:**
 - MySQL User: `docker` / Password: `docker`
-- MySQL Root: `root` / Password: `tiger`
+- MySQL Root: `root` / Password: `tiger` (command line only: root login is disabled in phpMyAdmin)
 
 ## 📖 Documentation
 
@@ -55,6 +64,7 @@ docker compose up -d
 - **[Examples](docs/EXAMPLES.md)** - Real-world use cases and configurations
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Windows Guide](docs/WINDOWS.md)** - Windows-specific instructions
+- **[Migration Guide](docs/MIGRATION.md)** - Move a site from an older LampBox (a fresh 3.0 copy is recommended)
 - **[Changelog](CHANGELOG.md)** - Version history
 
 ## ⚙️ Configuration
@@ -65,11 +75,11 @@ All configuration is done via the `.env` file (created by `init.sh`):
 # Project name (must be unique per project)
 COMPOSE_PROJECT_NAME=lamp
 
-# PHP version (php8, php81, php82, php83, php84, php85)
+# PHP version (php82, php83, php84, php85)
 PHPVERSION=php83
 
-# Database (mysql8, mysql84, mariadb103-106, mariadb1011, mariadb118, mariadb121)
-DATABASE=mysql8
+# Database (mysql84, mysql97, mariadb1011, mariadb114, mariadb118, mariadb123)
+DATABASE=mysql84
 
 # Ports (change if running multiple projects in direct port mode)
 HTTP_PORT=8080
@@ -82,29 +92,52 @@ MYSQL_PORT=
 
 # Access mode
 USE_REVERSE_PROXY=false  # false=ports, true=domains
+
+# Environment (see Production Mode below)
+LAMPBOX_ENV=development  # or production
 ```
 
 ### Switching PHP Versions
 
 ```bash
 # Edit .env
-PHPVERSION=php81  # or php8, php81, php82, php83, php84, php85
+PHPVERSION=php84  # or php82, php83, php85
 
-# Rebuild and restart
-docker compose down
-docker compose up -d --build
+# Rebuild (pulls the latest PHP image) and restart
+./lamp.sh rebuild
 ```
+
+### Applying PHP Security Releases
+
+The PHP images follow the latest patch release of their branch (e.g.
+`php:8.3-apache-bookworm`). When PHP publishes a security fix:
+
+```bash
+./lamp.sh update
+```
+
+It pulls the new base image, shows the running and new PHP versions, recreates
+**only** the webserver (the database is untouched) and keeps the previous image
+as `<project>-webserver:<PHPVERSION>-pre-update` for a rollback. A plain
+`docker compose up -d --build` does **not** pull a newer base image.
 
 ### Switching Database
 
 ```bash
-# Edit .env
-DATABASE=mariadb105  # or mysql8, mysql84, mariadb103-106, mariadb1011, mariadb118, mariadb121
+# Keep a dump of the current data
+./lamp.sh dump
 
-# Clean database and restart
-./lamp.sh clean-db
-docker compose up -d
+# Edit .env
+DATABASE=mariadb1011  # or mysql84, mysql97, mariadb114, mariadb118, mariadb123
+
+# Restart: each engine uses its own directory (data/mysql-<DATABASE>), so the
+# new one starts empty and the previous data stays untouched
+./lamp.sh restart
 ```
+
+Then import your application databases from the dump if needed. With a custom
+`MYSQL_DATA_DIR` shared by several engines, run `./lamp.sh clean-db` before
+switching: `lamp.sh` refuses to start an engine on data created by another one.
 
 ## 🛠️ Management Commands
 
@@ -119,15 +152,19 @@ Using the `lamp.sh` helper script:
 ./lamp.sh info           # Show connection info
 
 ./lamp.sh shell          # Access webserver shell
-./lamp.sh mysql          # Access MySQL shell
+./lamp.sh mysql          # Access MySQL shell (root)
+./lamp.sh dump           # Dump all databases to data/db-dumps/
 
-./lamp.sh rebuild        # Rebuild images
+./lamp.sh rebuild        # Rebuild images (pulls updated base images)
+./lamp.sh update         # Apply a PHP security release (webserver only)
 ./lamp.sh clean          # Clean everything (containers + data)
 ./lamp.sh clean-db       # Clean database only
-./lamp.sh ssl            # Generate SSL certificates
+./lamp.sh ssl            # Generate the shared Traefik certificate (*.local)
 ```
 
-Or use Docker Compose directly:
+Or use Docker Compose directly. It only reads `docker-compose.yml`: list the
+overrides you need (proxy, MySQL port, production) in `COMPOSE_FILE` in `.env`
+(see `sample.env`).
 
 ```bash
 docker compose up -d              # Start
@@ -142,6 +179,14 @@ docker compose exec webserver bash   # Shell
 ### Mode 1: Direct Port Access (Default)
 
 Access via `http://localhost:8080`
+
+HTTPS on `https://localhost:8443` (`HTTPS_PORT`) is enabled as soon as a
+certificate exists in `config/ssl`:
+
+```bash
+./generate-ssl-certs.sh localhost   # self-signed (or put your own cert.pem / cert-key.pem there)
+./lamp.sh restart
+```
 
 **Pros:** Simple, no configuration needed  
 **Cons:** Different ports per project
@@ -174,6 +219,11 @@ PROJECT_DOMAIN=myproject.local      # must be unique per project
 
 `./lamp.sh start` also runs `proxy-up` automatically if Traefik isn't up yet.
 
+Traefik reads its configuration and certificate from the `traefik/` directory
+of the project that started it. Before deleting that project, run
+`./lamp.sh proxy-down && ./lamp.sh proxy-up` from another one: otherwise
+Traefik cannot restart (after a reboot, for instance).
+
 **Pros:** Clean URLs, HTTPS by default, unlimited parallel projects  
 **Cons:** Requires hosts file modification
 
@@ -181,17 +231,21 @@ PROJECT_DOMAIN=myproject.local      # must be unique per project
 
 ### In direct port mode
 
-Each project needs unique identifiers and ports:
+Each project needs unique identifiers and ports. `HTTPS_PORT` too: it is
+always published in this mode, so two projects on the same value collide even
+without a certificate.
 
 ```bash
 # Project 1
 COMPOSE_PROJECT_NAME=lamp-project1
 HTTP_PORT=8080
-MYSQL_PORT=3306
+HTTPS_PORT=8443
+MYSQL_PORT=3306    # optional, only for a client on the host
 
 # Project 2
 COMPOSE_PROJECT_NAME=lamp-project2
 HTTP_PORT=8081
+HTTPS_PORT=8444
 MYSQL_PORT=3307
 ```
 
@@ -220,8 +274,9 @@ phpMyAdmin (`https://projectN.local/<COMPOSE_PROJECT_NAME>-mysql`).
 LampBox/
 ├── bin/                      # Dockerfiles for PHP and database versions
 ├── config/
+│   ├── apache/              # remoteip.conf (real client IP behind Traefik)
 │   ├── vhosts/              # Apache virtual hosts
-│   ├── php/                 # php.ini
+│   ├── php/                 # php.ini (development), php-production.ini
 │   ├── ssl/                 # SSL certificates (direct Apache HTTPS)
 │   ├── phpmyadmin/          # phpMyAdmin config
 │   └── initdb/              # MySQL init scripts (.sql, .sh)
@@ -232,62 +287,33 @@ LampBox/
 │   ├── generate-certs.sh    # Shared *.local certificate generator
 │   └── certs/               # Shared TLS certificate (generated)
 ├── data/
-│   └── mysql/               # MySQL data (persistent)
+│   ├── mysql-<DATABASE>/    # MySQL data (persistent)
+│   └── db-dumps/            # Dumps from ./lamp.sh dump
 ├── logs/
 │   ├── apache2/             # Apache logs
-│   └── mysql/               # MySQL logs
+│   └── mysql-<DATABASE>/    # MySQL logs
 ├── www/                      # Your web files (document root)
 ├── docs/                     # Documentation
-├── test/                     # Test scripts for configurations
 ├── docker-compose.yml        # Base stack (webserver + database)
 ├── docker-compose.proxy.yml  # Reverse proxy override (Traefik labels)
 ├── docker-compose.mysql-port.yml # Publishes the DB port (if MYSQL_PORT is set)
+├── docker-compose.production.yml # Production settings (if LAMPBOX_ENV=production)
 ├── sample.env               # Environment template
-├── init.sh                  # Initialization script (Linux/Mac/Git Bash)
-├── init.bat                 # Initialization script (Windows CMD)
+├── init.sh                  # Initialization script (Linux/Mac/Git Bash/WSL2)
 ├── lamp.sh                  # Management helper script
 ├── generate-ssl-certs.sh    # SSL cert generator (direct Apache HTTPS)
 └── check-system.sh          # System requirements checker
 ```
 
-## 🧪 Testing Scripts
-
-The project includes test scripts in the `test/` directory to verify different PHP and database configurations.
-
-### Quick Test
-
-```bash
-# Test a specific PHP + Database combination
-cd test/
-./test-config.sh php85 mariadb121 9000 9300
-```
-
-**Arguments:**
-1. PHP version (php8, php81, php82, php83, php84, php85)
-2. Database version (mysql8, mysql84, mariadb103-106, mariadb1011, mariadb118, mariadb121)
-3. HTTP port (e.g., 9000)
-4. MySQL port (e.g., 9300)
-
-### Cleanup
-
-```bash
-# Remove all test, logs, .env and containers
-cd test/
-./cleanup.sh
-```
-
-**Note for Windows users:** These scripts are bash scripts (`.sh`). You need to use:
-- **Git Bash** (recommended): Right-click → "Git Bash Here", then run the scripts
-- **WSL2**: Use Ubuntu terminal
-- The scripts cannot be run directly in Windows CMD or PowerShell
-
-See [test/README.md](test/README.md) for detailed documentation.
-
 ## 🔧 Development Tools
 
 ### Xdebug
 
-Xdebug is included. VS Code configuration in `.vscode/launch.json`:
+Xdebug is included, in `develop` mode by default (better error pages, no
+breakpoints) and turned off with `LAMPBOX_ENV=production`. For step
+debugging, uncomment the "Xdebug 3" lines of `config/php/php.ini`
+(`xdebug.mode=debug`, `xdebug.client_host=host.docker.internal`, ...), restart
+with `./lamp.sh restart` and add to `.vscode/launch.json`:
 
 ```json
 {
@@ -305,12 +331,14 @@ Xdebug is included. VS Code configuration in `.vscode/launch.json`:
 
 **Via phpMyAdmin:**
 - URL: `http://localhost:8080/lamp-mysql`
-- User: `docker` / Pass: `docker`
+- User: `docker` / Pass: `docker` (root login is disabled)
+- Access is controlled by `PHPMYADMIN_REQUIRE` in `.env` (e.g. `PHPMYADMIN_REQUIRE='ip 203.0.113.10'`, quotes included);
+  denied by default in production
 
 **Via CLI:**
 ```bash
 ./lamp.sh mysql
-# or
+# or ('mysql' on MySQL images, 'mariadb' on MariaDB images)
 docker compose exec database mysql -u docker -p
 ```
 
@@ -341,22 +369,17 @@ MYSQL_PORT=3307
 
 **"Permission denied" (Linux/Mac)**
 ```bash
-# Re-run init to fix permissions
-./init.sh
+# Apache must run with your IDs: set the output of 'id -u' / 'id -g' in .env
+USER_ID=1000
+GROUP_ID=1000
+./lamp.sh restart
 ```
 
 **MySQL won't start: "data directory has files"**
 ```bash
 # Clean database and restart
 ./lamp.sh clean-db
-docker compose up -d
-```
-
-**phpMyAdmin: "Permissions incorrect"**
-```bash
-# Fix permissions
-chmod 644 config/phpmyadmin/config.inc.php
-docker compose restart webserver
+./lamp.sh start
 ```
 
 **Scripts don't work: "readonly variable"**
@@ -371,28 +394,67 @@ sed -i 's/^GID=/GROUP_ID=/' .env
 
 ## 🖥️ Windows Users
 
-**Recommended:** Use Git Bash for best experience
+`init.sh` and `lamp.sh` are bash scripts. Run them from:
 
-**3 Methods:**
-
-1. **Git Bash** (recommended) - Full bash script support
+1. **Git Bash** (recommended) - installed with Git for Windows
 2. **WSL2** - Linux experience on Windows
-3. **CMD** - Basic support with `init.bat` and Docker commands
+
+`init.bat` was removed in 3.0.0. Plain `docker compose` commands also work
+from CMD or PowerShell once `.env` exists.
 
 See [Windows Guide](docs/WINDOWS.md) for detailed instructions.
 
-## 🔐 Security Notes
+## 🔐 Production Mode
 
-⚠️ **This stack is for LOCAL DEVELOPMENT only!**
+LampBox defaults to development settings. For a site exposed on the Internet,
+set in `.env`:
 
-For production:
-- Change all default passwords
+```bash
+LAMPBOX_ENV=production
+PHPMYADMIN_REQUIRE=            # empty = "all denied"
+#PHPMYADMIN_REQUIRE='ip 203.0.113.10'   # or allow your IP (keep the quotes)
+```
+
+`lamp.sh` then applies `docker-compose.production.yml`:
+
+| | development | production |
+|---|---|---|
+| PHP settings | `config/php/php.ini` | `config/php/php-production.ini` |
+| PHP errors | displayed | logged in the Apache error log only |
+| Xdebug | develop mode | off |
+| `X-Powered-By` header | sent | not sent |
+| phpMyAdmin | open (`all granted`) | denied (`all denied`) unless `PHPMYADMIN_REQUIRE` allows it |
+
+In both modes phpMyAdmin refuses root logins and session upload progress is
+disabled. Running `docker compose` directly instead of `lamp.sh`? Add the
+override to `COMPOSE_FILE` in `.env` (see `sample.env`).
+
+Also for production:
+- Change all default passwords (quote values containing `$`: `'abc$xyz'`)
 - Use proper SSL certificates (Let's Encrypt)
-- Disable phpMyAdmin or restrict access
-- Review and harden all configurations
-- Use environment-specific configs
+- Back up with `./lamp.sh dump`, never by copying `data/` while the database runs
+- Apply PHP security releases with `./lamp.sh update`
 
-## 🆚 What's New in v2.2.0
+Site created with an older LampBox: start from a fresh 3.0 copy and move the
+site into it (updating the old project in place is not recommended), see the
+[Migration Guide](docs/MIGRATION.md).
+
+## 🆚 What's New in v3.0.0
+
+### Version 3.0.0 (2026-10-26)
+- ✅ **Production mode** (`LAMPBOX_ENV=production`): PHP errors hidden, Xdebug off, no `X-Powered-By`, phpMyAdmin denied by default
+- ✅ phpMyAdmin access configurable (`PHPMYADMIN_REQUIRE`), root login disabled, real client IP behind Traefik
+- ✅ New `./lamp.sh update`: apply a PHP security release to the webserver only, with rollback image
+- ✅ New `./lamp.sh dump`: consistent database dumps with rotation; passwords no longer on the command line
+- ✅ `./lamp.sh rebuild` now pulls updated base images
+- ✅ php82 follows `php:8.2-apache-bookworm`; PHP 8.0 and 8.1 removed (end of life)
+- ✅ New [Migration Guide](docs/MIGRATION.md): move a site from an older version into a fresh 3.0 copy (recommended)
+- ✅ Databases: only supported LTS versions (MySQL 8.4, 9.7; MariaDB 10.11, 11.4, 11.8, 12.3); default is now `mysql84`
+- ✅ Fixed database data directory handling (`clean-db`, engine check) and engine switching (`start` builds the matching image)
+- ✅ Direct HTTPS on `HTTPS_PORT` works once `./generate-ssl-certs.sh` has created a certificate
+- ✅ Running `docker compose` directly: `COMPOSE_PATH_SEPARATOR=:` and `COMPOSE_FILE` in `.env`, on every OS
+- ✅ Shell scripts are executable, files keep LF endings on Windows, `make clean` fixed on Linux
+- ✅ `init.bat` removed: on Windows, use Git Bash or WSL2; supported platforms are now stated
 
 ### Version 2.2.0 (2026-07-15)
 - ✅ Replaced the per-project Nginx reverse proxy with a single **shared Traefik** instance
@@ -431,9 +493,9 @@ See [CHANGELOG.md](CHANGELOG.md) for full history.
 
 ## 📦 Docker Images Used
 
-- **PHP**: Custom builds from `php:8.0-apache` to `php:8.5-apache`
-- **MySQL**: `mysql:8.0`, `mysql:8.4`
-- **MariaDB**: `mariadb:10.3` to `mariadb:10.6`, `mariadb:10.11`, `mariadb:11.8`, `mariadb:12.1`
+- **PHP**: Custom builds from `php:8.2-apache-bookworm` to `php:8.5-apache-bookworm`
+- **MySQL**: `mysql:8.4`, `mysql:9.7`
+- **MariaDB**: `mariadb:10.11`, `mariadb:11.4`, `mariadb:11.8`, `mariadb:12.3`
 - **Traefik**: `traefik:v3.6` (shared reverse proxy)
 - **phpMyAdmin**: Built into PHP images
 

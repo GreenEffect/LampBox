@@ -1,6 +1,6 @@
 # 🔧 Troubleshooting Guide
 
-Common issues and solutions for LampBox v2.2.0.
+Common issues and solutions for LampBox v3.0.0.
 
 ## 📑 Table of Contents
 
@@ -24,7 +24,7 @@ Common issues and solutions for LampBox v2.2.0.
 [ERROR] [MY-013236] The designated data directory /var/lib/mysql/ is unusable.
 ```
 
-**Cause:** The `data/mysql/` directory contains residual files preventing MySQL initialization.
+**Cause:** The database data directory (`data/mysql-<DATABASE>/` by default, or `MYSQL_DATA_DIR`) contains residual files preventing MySQL initialization.
 
 **Note:** If you see InnoDB errors such as `Tablespace flags are invalid`, `Corrupted page`, or `Data Dictionary initialization failed`, the local data directory is likely incompatible or corrupted. In that case, `./lamp.sh clean-db` is required before restarting.
 
@@ -32,38 +32,40 @@ Common issues and solutions for LampBox v2.2.0.
 ```bash
 # Clean database and restart
 ./lamp.sh clean-db
-docker compose up -d
+./lamp.sh start
 ```
 
 **Solution 2: Manual Cleanup**
 ```bash
 # Stop containers
-docker compose down
+./lamp.sh stop
 
-# Clean MySQL data directory
-rm -rf data/mysql/*
+# Clean the data directory (its files belong to the container's mysql
+# user, so a plain 'rm' from the host usually needs sudo)
+sudo rm -rf data/mysql-<DATABASE>/*
 
 # Restart
-docker compose up -d
+./lamp.sh start
 ```
 
 **Solution 3: With Backup**
 ```bash
-# Backup existing data first
-docker compose exec database mysqldump -u root -p --all-databases > backup.sql
+# Backup existing data first (consistent dump in data/db-dumps/)
+./lamp.sh dump
 
 # Clean and restart
 ./lamp.sh clean-db
-docker compose up -d
+./lamp.sh start
 
 # Restore if needed
-docker compose exec -T database mysql -u root -p < backup.sql
+make db-restore FILE=data/db-dumps/<dump>.sql.gz
 ```
 
 **Prevention:**
-- Always use `./lamp.sh clean-db` when switching database versions
-- Don't manually modify files in `data/mysql/`
-- Use `docker compose down` (not `docker compose down -v`) to preserve data
+- Keep the default per-engine data directory (`data/mysql-<DATABASE>`): switching `DATABASE` then starts on a fresh directory. With a custom `MYSQL_DATA_DIR`, run `./lamp.sh dump` then `./lamp.sh clean-db` before switching engines
+- Don't manually modify files in the database data directory
+- Don't put any file (such as `.gitkeep`) in it: MySQL refuses to initialize a non-empty directory
+- Stop projects with `./lamp.sh stop`. The data directory is mounted from the host: `docker compose down` (with or without `-v`) leaves it in place; only `./lamp.sh clean-db`, or `./lamp.sh clean` answered "y" twice, deletes it
 
 ### MySQL Container Exits Immediately
 
@@ -83,16 +85,15 @@ docker compose logs database
    # Change MySQL port in .env
    MYSQL_PORT=3307
    
-   # Restart
-   docker compose down
-   docker compose up -d
+   # Restart (lamp.sh applies docker-compose.mysql-port.yml when MYSQL_PORT is set)
+   ./lamp.sh restart
    ```
 
 2. **Corrupted data directory**
    ```bash
    # Clean and restart
    ./lamp.sh clean-db
-   docker compose up -d
+   ./lamp.sh start
    ```
 
 3. **Insufficient memory**
@@ -149,26 +150,6 @@ $pdo = new PDO($dsn, $user, $pass);
 
 ## 🔐 phpMyAdmin Issues
 
-### "Permissions on Configuration File Incorrect"
-
-**Error:**
-```
-phpMyAdmin - Erreur
-Permissions sur le fichier de configuration incorrectes,
-il ne doit pas être en écriture pour tout le monde !
-```
-
-**Solution:**
-```bash
-# Fix permissions (Linux/Mac)
-chmod 644 config/phpmyadmin/config.inc.php
-
-# Restart webserver
-docker compose restart webserver
-```
-
-**Note:** On Windows, this issue is automatically handled. If it persists, the configuration file has a directive to disable this check.
-
 ### Can't Access phpMyAdmin
 
 **Check URL format:**
@@ -195,6 +176,11 @@ docker compose ps webserver
 ./lamp.sh logs webserver
 ```
 
+**"Forbidden" (403):** access is restricted by `PHPMYADMIN_REQUIRE`, which
+defaults to `all denied` when `LAMPBOX_ENV=production`. Check the effective
+rule with `./lamp.sh info`, then allow your IP in `.env`
+(`PHPMYADMIN_REQUIRE='ip 203.0.113.10'`, quotes included) and run `./lamp.sh restart`.
+
 ### phpMyAdmin Login Fails
 
 **Check credentials:**
@@ -204,13 +190,11 @@ cat .env | grep MYSQL_
 
 # Try with these credentials
 # User: docker
-# Password: docker
-
-# OR
-
-# User: root
-# Password: tiger (or MYSQL_ROOT_PASSWORD value)
+# Password: docker (or MYSQL_USER / MYSQL_PASSWORD values)
 ```
+
+Root login is disabled in phpMyAdmin (`AllowRoot = false`): use
+`./lamp.sh mysql` for root access.
 
 **Reset MySQL password:**
 ```bash
@@ -244,9 +228,8 @@ nano .env
 USER_ID=1000    # Get with: id -u
 GROUP_ID=1000   # Get with: id -g
 
-# Restart containers
-docker compose down
-docker compose up -d
+# Restart: the containers are recreated with the new IDs
+./lamp.sh restart
 ```
 
 **Find your UID/GID:**
@@ -261,9 +244,10 @@ id -g  # Shows your group ID
 
 **Solution:**
 ```bash
-# Option 1: Configure correct USER_ID in .env
-USER_ID=$(id -u)
-GROUP_ID=$(id -g)
+# Option 1: Configure correct USER_ID in .env (numbers: Compose does not run
+# $(id -u) in .env), then ./lamp.sh restart
+USER_ID=1000    # output of: id -u
+GROUP_ID=1000   # output of: id -g
 
 # Option 2: Change ownership after container creates files
 sudo chown -R $USER:$USER www/
@@ -288,12 +272,6 @@ sudo chown -R $USER:$USER www/
    ```bash
    chmod +x *.sh
    ./init.sh
-   ```
-
-3. **Use Windows CMD**
-   ```cmd
-   init.bat
-   docker compose up -d
    ```
 
 ---
@@ -332,8 +310,7 @@ HTTPS_PORT=8444
 MYSQL_PORT=3307
 
 # Restart
-docker compose down
-docker compose up -d
+./lamp.sh restart
 ```
 
 **Solution 2: Stop conflicting service**
@@ -404,7 +381,7 @@ never started, `https://project2.local` returns a Traefik **404** (the request
 reached Traefik, but no router matched).
 
 A frequent cause: **`MYSQL_PORT` is NOT covered by the reverse proxy** — it is
-published on the host in both modes. Two projects both using the default `3306`
+published on the host in both modes. Two projects both set to `3306`
 conflict, the database fails to start, and since `webserver` has
 `depends_on: database`, nothing comes up.
 
@@ -466,12 +443,11 @@ rm .env
 
 2. **Use WSL2**
    - Open Ubuntu terminal
-   - Navigate to project: `cd /mnt/c/path/to/LampBox`
+   - Keep the project in the Linux filesystem (e.g. `~/projects/LampBox`), not
+     under `/mnt/c`: file ownership then works as on Linux, and it is much faster
    - Run: `./init.sh`
 
-3. **Use Windows CMD**
-   - Use `init.bat` instead of `init.sh`
-   - Use Docker commands directly: `docker compose up -d`
+`init.bat` was removed in 3.0.0: the scripts need bash.
 
 ### lamp.sh Commands Don't Work
 
@@ -492,6 +468,9 @@ docker compose up -d        # Instead of: ./lamp.sh start
 docker compose down         # Instead of: ./lamp.sh stop
 docker compose logs -f      # Instead of: ./lamp.sh logs
 ```
+
+These only read `docker-compose.yml`: list the overrides you need (proxy,
+MySQL port, production) in `COMPOSE_FILE` in `.env` (see `sample.env`).
 
 ---
 
@@ -567,7 +546,7 @@ notepad C:\Windows\System32\drivers\etc\hosts
 
 **Linux:**
 ```bash
-sudo systemd-resolve --flush-caches
+sudo resolvectl flush-caches
 ```
 
 **Mac:**
@@ -592,8 +571,19 @@ docker ps --filter name=lampbox-traefik
 # The shared network must exist:
 docker network inspect lampbox_web >/dev/null && echo "network OK"
 
-# Check Traefik discovered your project (look for your router/rule):
-docker logs lampbox-traefik | grep -i "$(grep PROJECT_DOMAIN .env | cut -d= -f2)"
+# Check the routing rule declared by your project (Traefik reads it from this
+# label; its INFO-level log does not list routers):
+docker inspect <project>-webserver --format '{{index .Config.Labels "traefik.http.routers.<project>.rule"}}'
+# → Host(`myproject.local`); empty = the project was not started with the proxy override
+```
+
+**Every `*.local` site is down after a reboot, `lampbox-traefik` has exited**
+("OCI runtime create failed"): the project Traefik was started from has been
+deleted, and with it the `traefik/` files it mounts. Start it again from an
+existing project:
+
+```bash
+./lamp.sh proxy-down && ./lamp.sh proxy-up
 ```
 
 **Browser shows a certificate warning:** expected with the self-signed
@@ -640,8 +630,7 @@ innodb_buffer_pool_size = 256M
 
 **Force rebuild:**
 ```bash
-docker compose down
-docker compose up -d --build
+./lamp.sh rebuild    # pulls the latest base images, then rebuilds without cache
 ```
 
 **Check volume mounts:**
@@ -689,7 +678,7 @@ docker network inspect lamp-network
 docker compose exec webserver php -v
 docker compose exec webserver apache2 -v
 
-# Database info
+# Database info ('mysql' on MySQL images, 'mariadb' on MariaDB images)
 docker compose exec database mysql --version
 
 # Environment variables

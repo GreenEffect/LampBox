@@ -33,7 +33,7 @@ HTTPS_PORT=8443
 MYSQL_PORT=3306
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 
 DOCUMENT_ROOT=./www
 APACHE_DOCUMENT_ROOT=/var/www/html
@@ -64,7 +64,7 @@ USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=myproject.local
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 
 DOCUMENT_ROOT=./www
 APACHE_DOCUMENT_ROOT=/var/www/html
@@ -104,7 +104,7 @@ HTTPS_PORT=8443
 MYSQL_PORT=3306
 
 PHPVERSION=php82
-DATABASE=mysql8
+DATABASE=mysql84
 
 MYSQL_ROOT_PASSWORD=root
 MYSQL_DATABASE=project1
@@ -120,7 +120,7 @@ HTTPS_PORT=8444
 MYSQL_PORT=3307
 
 PHPVERSION=php83
-DATABASE=mariadb106
+DATABASE=mariadb1011
 
 MYSQL_ROOT_PASSWORD=root
 MYSQL_DATABASE=project2
@@ -135,8 +135,8 @@ HTTP_PORT=8082
 HTTPS_PORT=8445
 MYSQL_PORT=3308
 
-PHPVERSION=php81
-DATABASE=mysql8
+PHPVERSION=php82
+DATABASE=mysql84
 
 MYSQL_ROOT_PASSWORD=root
 MYSQL_DATABASE=project3
@@ -162,7 +162,7 @@ USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=myblog.local
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 MYSQL_DATABASE=blog
 ```
 
@@ -173,7 +173,7 @@ USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=myshop.local
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 MYSQL_DATABASE=shop
 ```
 
@@ -184,7 +184,7 @@ USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=api.local
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 MYSQL_DATABASE=api
 ```
 
@@ -220,7 +220,7 @@ HTTPS_PORT=8443
 MYSQL_PORT=3306
 
 PHPVERSION=php82
-DATABASE=mysql8
+DATABASE=mysql84
 
 DOCUMENT_ROOT=./www
 APACHE_DOCUMENT_ROOT=/var/www/html
@@ -270,10 +270,11 @@ USE_REVERSE_PROXY=false
 HTTP_PORT=8080
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 
-DOCUMENT_ROOT=./www/public
-APACHE_DOCUMENT_ROOT=/var/www/html
+# Mount the whole project, serve its public/ directory
+DOCUMENT_ROOT=./www
+APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 MYSQL_ROOT_PASSWORD=root
 MYSQL_DATABASE=laravel
@@ -296,7 +297,9 @@ DB_USERNAME=laravel
 DB_PASSWORD=secret
 ```
 
-**Note:** Place your Laravel project in `www/` directory.
+**Note:** Place your Laravel project in `www/`. Mount `www/` and point
+`APACHE_DOCUMENT_ROOT` at `public/`: with `DOCUMENT_ROOT=./www/public`, only
+`public/` would be in the container and `index.php` could not load `../vendor/`.
 
 ---
 
@@ -314,10 +317,11 @@ USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=symfony.local
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 
-DOCUMENT_ROOT=./www/public
-APACHE_DOCUMENT_ROOT=/var/www/html
+# Mount the whole project, serve its public/ directory (as for Laravel)
+DOCUMENT_ROOT=./www
+APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 MYSQL_ROOT_PASSWORD=root
 MYSQL_DATABASE=symfony
@@ -330,7 +334,7 @@ MYSQL_PASSWORD=symfony
 APP_ENV=dev
 APP_SECRET=your-secret-key
 
-DATABASE_URL="mysql://symfony:symfony@symfony-database:3306/symfony?serverVersion=8.0"
+DATABASE_URL="mysql://symfony:symfony@symfony-database:3306/symfony?serverVersion=8.4"
 ```
 
 **/etc/hosts:**
@@ -344,17 +348,22 @@ DATABASE_URL="mysql://symfony:symfony@symfony-database:3306/symfony?serverVersio
 
 **Use case:** Multi-subdomain e-commerce site
 
+Use direct port mode here: the shared Traefik only routes `PROJECT_DOMAIN`
+(`admin.shop.local` would get a 404) and its `*.local` certificate does not
+cover sub-subdomains.
+
 **.env:**
 ```bash
 COMPOSE_PROJECT_NAME=shop
 USER_ID=1000
 GROUP_ID=1000
 
-USE_REVERSE_PROXY=true
-PROJECT_DOMAIN=shop.local
+USE_REVERSE_PROXY=false
+HTTP_PORT=8080
+HTTPS_PORT=8443
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 
 DOCUMENT_ROOT=./www
 APACHE_DOCUMENT_ROOT=/var/www/html
@@ -394,9 +403,9 @@ MYSQL_PASSWORD=secret
 ```
 
 **Access:**
-- https://shop.local (storefront)
-- https://admin.shop.local (admin panel)
-- https://api.shop.local (API)
+- http://shop.local:8080 (storefront)
+- http://admin.shop.local:8080 (admin panel, `SUBDOMAIN=admin` in PHP)
+- http://api.shop.local:8080 (API, `SUBDOMAIN=api`)
 
 ---
 
@@ -415,7 +424,7 @@ HTTP_PORT=8080
 MYSQL_PORT=3306
 
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 
 DOCUMENT_ROOT=./www/public
 APACHE_DOCUMENT_ROOT=/var/www/html
@@ -462,9 +471,8 @@ MYSQL_PASSWORD=secret
 COMPOSE_PROJECT_NAME=gateway
 USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=gateway.local
-HTTP_PORT=8080
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 MYSQL_DATABASE=gateway
 ```
 
@@ -473,9 +481,8 @@ MYSQL_DATABASE=gateway
 COMPOSE_PROJECT_NAME=users
 USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=users.local
-HTTP_PORT=8081
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 MYSQL_DATABASE=users
 ```
 
@@ -484,9 +491,8 @@ MYSQL_DATABASE=users
 COMPOSE_PROJECT_NAME=products
 USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=products.local
-HTTP_PORT=8082
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 MYSQL_DATABASE=products
 ```
 
@@ -495,9 +501,8 @@ MYSQL_DATABASE=products
 COMPOSE_PROJECT_NAME=orders
 USE_REVERSE_PROXY=true
 PROJECT_DOMAIN=orders.local
-HTTP_PORT=8083
 PHPVERSION=php83
-DATABASE=mysql8
+DATABASE=mysql84
 MYSQL_DATABASE=orders
 ```
 
@@ -511,11 +516,16 @@ MYSQL_DATABASE=orders
 
 **Architecture:**
 ```
-Client → gateway.local (API Gateway)
-          ├─> users.local (User Service)
-          ├─> products.local (Product Service)
-          └─> orders.local (Order Service)
+Client → https://gateway.local (API Gateway)
+          ├─> http://users-webserver    (User Service)
+          ├─> http://products-webserver (Product Service)
+          └─> http://orders-webserver   (Order Service)
 ```
+
+The `*.local` names only exist in your host's `hosts` file: from inside a
+container they do not resolve. The gateway calls the services by container
+name (`<COMPOSE_PROJECT_NAME>-webserver`), over plain HTTP on the shared
+`lampbox_web` network that every proxied project joins.
 
 ---
 
@@ -552,24 +562,21 @@ PHPVERSION=php83
 
 # Project 4: PHP 8.2 (legacy)
 PHPVERSION=php82
-
-# Project 5: PHP 8.1 (legacy)
-PHPVERSION=php81
 ```
 
 ### Tip 3b: Different Database Versions
 ```bash
-# Latest MySQL
+# MySQL LTS (8.4 is the most widely supported by PHP applications)
 DATABASE=mysql84
 
-# Latest MariaDB
-DATABASE=mariadb121
+# Latest MySQL LTS
+DATABASE=mysql97
 
-# Stable MariaDB
+# Latest MariaDB LTS
+DATABASE=mariadb123
+
+# Other MariaDB LTS: mariadb118, mariadb114, mariadb1011
 DATABASE=mariadb118
-
-# Older MariaDB
-DATABASE=mariadb1011
 ```
 
 ### Tip 4: Resource Optimization
@@ -583,25 +590,6 @@ cd ~/projects/project2 && ./lamp.sh start
 ```
 
 ---
-
-## 🧪 Testing Your Configuration
-
-Before deploying, you can test your configuration using the test scripts:
-
-```bash
-cd test/
-./test-config.sh php83 mysql8 9000 9300
-```
-
-This will:
-- Create a test environment with your specified PHP and database versions
-- Start containers on non-conflicting ports
-- Verify everything works correctly
-- Generate logs for debugging
-
-See [test/README.md](../test/README.md) for complete documentation.
-
-**Note for Windows users:** These scripts require Git Bash or WSL2. See the [Windows Guide](WINDOWS.md) for setup instructions.
 
 ## 📚 More Examples Needed?
 

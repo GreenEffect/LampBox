@@ -1,0 +1,316 @@
+# 🔄 Moving an Existing Project to LampBox 3.0
+
+LampBox is copied into each project, so older projects keep the files they were
+created with. This guide moves a site installed with LampBox 1.x–2.2 to 3.0
+without losing data.
+
+> **Recommended: start from a fresh LampBox 3.0 copy** and move the site into
+> it (first part). Updating an existing project in place (second part) is
+> **not recommended**: it mixes files of several versions and depends on how
+> each project was set up over time (data directory, removed versions,
+> hand-written labels). Keep it for the cases where a fresh copy is not
+> possible.
+
+---
+
+## ✅ Recommended: Start From a Fresh Copy
+
+The old project stays untouched until the new one works, so going back is
+immediate.
+
+1. **Dump the databases** of the old project (works with any LampBox version):
+
+   ```bash
+   cd /path/to/old-project
+   docker compose exec -T database sh -c \
+     'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec "$(command -v mariadb-dump || command -v mysqldump)" \
+        -uroot --all-databases --single-transaction --routines --events --triggers' \
+     | gzip > /path/to/old-project-dump.sql.gz
+   ```
+
+2. **Create the new project**: copy LampBox 3.0 into a new directory and run
+   `./init.sh`.
+
+3. **Carry the settings over** from the old `.env` to the new one:
+   - `COMPOSE_PROJECT_NAME`, and `USE_REVERSE_PROXY` / `PROJECT_DOMAIN` or the
+     ports;
+   - the database credentials, **unchanged** (`MYSQL_ROOT_PASSWORD`,
+     `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`): the dump restores the
+     old users with their old passwords;
+   - `PHPVERSION` and `DATABASE`, choosing supported versions (see
+     [step 4](#4-move-off-unsupported-versions): the data moves through the
+     dump, so any supported engine of the same family works);
+   - `LAMPBOX_ENV=production` and `PHPMYADMIN_REQUIRE` for a public site (see
+     [step 6](#6-production-mode)).
+
+   Quote values containing `$` or spaces: `MYSQL_PASSWORD='abc$xyz'`.
+
+4. **Copy the site**: `www/` (or your `DOCUMENT_ROOT`). Bring over the files you
+   customised (`config/vhosts/`, `config/php/php.ini`, a file with your own
+   Traefik labels) only after comparing them with the new ones.
+
+5. **Switch**: stop the old project, start the new one and restore the dump:
+
+   ```bash
+   cd /path/to/old-project && docker compose down      # never -v
+   cd /path/to/new-project && ./lamp.sh start
+   make db-restore FILE=/path/to/old-project-dump.sql.gz
+   ```
+
+   If the dump comes from an older MariaDB (e.g. `mariadb106` to
+   `mariadb1011`), bring the restored system tables up to date, otherwise
+   MariaDB logs "Incorrect definition of table mysql.column_stats":
+
+   ```bash
+   docker compose exec -T database sh -c \
+     'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mariadb-upgrade -uroot --force'
+   ```
+
+6. **Check** the site, then the points listed in [step 7](#7-apply).
+
+7. **Going back**: `./lamp.sh stop` in the new project, `docker compose up -d`
+   in the old one. Delete the old directory once the new site has run for a
+   while. If the shared Traefik was started from the old project, move it to
+   the new one first: Traefik reads its configuration from the `traefik/`
+   directory of the project that started it, and could not restart (after a
+   reboot, for instance) once that directory is gone.
+
+   ```bash
+   docker inspect lampbox-traefik --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'
+   cd /path/to/new-project && ./lamp.sh proxy-down && ./lamp.sh proxy-up
+   ```
+
+---
+
+## ⚠️ Not Recommended: Update in Place
+
+Only when a fresh copy is not possible. Read every step before starting.
+
+### ⚠️ Read First: Database Data Directory
+
+Since 2.1.0 the default data directory is `./data/mysql-${DATABASE}`. Projects
+created before that keep their data in **`./data/mysql`**.
+
+If your `.env` has no `MYSQL_DATA_DIR`, the new `docker-compose.yml` starts the
+database on an **empty** directory: nothing is deleted, but your site loses its
+data until you fix the path. Before starting anything, check where the data
+actually is:
+
+```bash
+docker inspect <project>-database -f '{{range .Mounts}}{{if eq .Destination "/var/lib/mysql"}}{{.Source}}{{end}}{{end}}'
+```
+
+and set the same path in `.env`:
+
+```bash
+MYSQL_DATA_DIR=./data/mysql
+MYSQL_LOG_DIR=./logs/mysql
+```
+
+On the first `./lamp.sh start`, lamp.sh may ask once whether this data was
+created by your `DATABASE` engine (it cannot tell from a custom directory name),
+then records the answer in `data/mysql.database`.
+
+---
+
+### 1. Back Up
+
+```bash
+# Database dump (works with any LampBox version)
+docker compose exec -T database sh -c \
+  'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec "$(command -v mariadb-dump || command -v mysqldump)" \
+     -uroot --all-databases --single-transaction --routines --events --triggers' \
+  | gzip > backup-before-migration.sql.gz
+
+# Configuration
+cp .env .env.bak-$(date +%F)
+cp docker-compose.yml docker-compose.yml.bak-$(date +%F)
+
+# Image currently running, for a rollback
+docker tag <project>-webserver <project>-webserver:pre-migration
+```
+
+Never back up `data/mysql` by copying files while the database runs: the copy
+is usually inconsistent. Use dumps (see [Backups](#backups)).
+
+### 2. Update the LampBox Files
+
+Copy these from the new release into the project:
+
+- `lamp.sh`, `Makefile`
+- `docker-compose.yml`, `docker-compose.proxy.yml`,
+  `docker-compose.mysql-port.yml`, `docker-compose.production.yml`
+- `bin/` (Dockerfiles)
+- `config/apache/`, `config/php/php-production.ini`
+- `config/phpmyadmin/config.inc.php` (compare first if you customised it)
+- `config/vhosts/default.conf` if you did not customise it: HTTPS on
+  `HTTPS_PORT` is then enabled as soon as a certificate exists in `config/ssl`
+
+Never overwrite `.env`, `www/`, `data/`, `logs/`, or files you customised
+(`config/vhosts/`, `config/php/php.ini`). If `lamp.sh` is not executable:
+`chmod +x lamp.sh init.sh`.
+
+`init.bat` is no longer provided: delete it from the project. On Windows, run
+`init.sh` and `lamp.sh` from Git Bash or WSL2.
+
+### 3. Update `.env`
+
+List the variables that `sample.env` has and your `.env` lacks:
+
+```bash
+diff <(grep -oE '^[A-Z_]+=' sample.env | sort) <(grep -oE '^[A-Z_]+=' .env | sort)
+```
+
+Then review:
+
+| Variable | What to do |
+|---|---|
+| `MYSQL_DATA_DIR`, `MYSQL_LOG_DIR` | Point to your existing directories (see above) |
+| `PHPVERSION` | `php74`, `php8` and `php81` are no longer provided: use `php82` or later (see step 4) |
+| `DATABASE` | `mysql8`, `mariadb103`-`mariadb106` and `mariadb121` are no longer provided (see step 4) |
+| `MYSQL_PORT` | Leave empty unless a client on the host needs the database (it is no longer published by default) |
+| `LAMPBOX_ENV` | `production` for a public site (see step 6) |
+| `PHPMYADMIN_REQUIRE` | Who may open phpMyAdmin, e.g. `PHPMYADMIN_REQUIRE='ip 203.0.113.10'` (quotes included) |
+| `PHPMYADMIN_BLOWFISH_SECRET` | Must be exactly 32 characters. Older `init.sh` versions generated 64, and phpMyAdmin then warns that the key is "longer than necessary": replace it with the output of `openssl rand -hex 16` (phpMyAdmin users log in again) |
+| Values containing `$` or spaces | Put them between single quotes: `MYSQL_PASSWORD='abc$xyz'` |
+
+### 4. Move Off Unsupported Versions
+
+#### PHP
+
+PHP 7.4, 8.0 and 8.1 receive no security fixes. Before switching `PHPVERSION`:
+
+- check the PHP versions supported by your application and its dependencies
+  (`composer.json` → `require.php`, CMS documentation);
+- update the application first if needed;
+- after the switch, watch `logs/apache2/error.log` for deprecations and errors.
+
+#### Databases
+
+| Removed | Use instead |
+|---|---|
+| `mysql8` | `mysql84`: same engine for LampBox 2.x projects (their `mysql8` image could only run MySQL 8.4); check older ones with `docker exec <project>-database mysqld --version` |
+| `mariadb103` to `mariadb106` | `mariadb1011` or later (10.3-10.6 are end of life) |
+| `mariadb121` | `mariadb123` (12.3 LTS) |
+
+**`mysql8` → `mysql84`** keeps the data as is. Stop the project, then rename
+the default data directory and its engine marker:
+
+```bash
+./lamp.sh stop
+mv data/mysql-mysql8 data/mysql-mysql84
+echo mysql84 > data/mysql-mysql84.database && rm -f data/mysql-mysql8.database
+# .env: DATABASE=mysql84
+./lamp.sh start
+```
+
+(With an explicit `MYSQL_DATA_DIR`, keep the directory and only update its
+`.database` marker.)
+
+**Older MariaDB → `mariadb1011` or later**: with the default per-engine
+directories the new version starts on an empty directory, so move the data with
+a dump:
+
+```bash
+./lamp.sh dump
+# .env: DATABASE=mariadb1011 (or mariadb114, mariadb118, mariadb123)
+./lamp.sh restart
+make db-restore FILE=data/db-dumps/<dump>.sql.gz
+# The dump also restored the system tables (users, grants) in their old
+# format: bring them to the new version, otherwise MariaDB logs
+# "Incorrect definition of table mysql.column_stats"
+docker compose exec -T database sh -c \
+  'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mariadb-upgrade -uroot --force'
+```
+
+The previous data directory is left untouched: delete it once the site is
+checked. Dumps from 10.3 contain older system tables: restore only your
+application databases from them.
+
+### 5. Old Compose Files: What Changed
+
+- **Database port**: older files published `3306` on every interface. It is now
+  published only when `MYSQL_PORT` is set.
+- **`version:` attribute**: obsolete, removed (Compose printed a warning).
+- **Restart policy**: `always` became `unless-stopped`: a container you stop by
+  hand stays stopped after a Docker restart.
+- **Hand-written Traefik labels**: `docker-compose.proxy.yml` targets the
+  shared LampBox Traefik (`lampbox_web` network, `*.local` certificate). If you
+  use your own Traefik, keep your labels and network in a separate file (e.g.
+  `docker-compose.traefik.yml`) rather than in `docker-compose.yml`, and list it
+  in `COMPOSE_FILE`. To use the real client IP there too, mount
+  `config/apache/remoteip.conf` in that file, only if the webserver publishes
+  no host port.
+
+### 6. Production Mode
+
+For a site exposed on the Internet:
+
+```bash
+LAMPBOX_ENV=production
+PHPMYADMIN_REQUIRE=            # empty = "all denied"
+#PHPMYADMIN_REQUIRE='ip 203.0.113.10'   # or allow your IP (keep the quotes)
+```
+
+This hides PHP errors from visitors (they go to the Apache error log), turns
+Xdebug off, removes the `X-Powered-By` header and denies phpMyAdmin.
+`lamp.sh` applies `docker-compose.production.yml` by itself. If you run
+`docker compose` directly, add the files to `.env`:
+
+```bash
+COMPOSE_PATH_SEPARATOR=:     # ':' on every OS (never ';', which breaks lamp.sh)
+COMPOSE_FILE=docker-compose.yml:docker-compose.production.yml
+```
+
+### 7. Apply
+
+```bash
+./lamp.sh update   # rebuild the webserver on the latest PHP image, database untouched
+./lamp.sh start    # apply the remaining changes (e.g. database port): containers whose
+                   # settings changed are recreated, data stays in MYSQL_DATA_DIR
+```
+
+Check the result:
+
+```bash
+./lamp.sh info                                         # environment, phpMyAdmin rule
+docker exec <project>-webserver php -r 'echo PHP_VERSION, PHP_EOL;'
+docker port <project>-database                         # empty unless MYSQL_PORT is set
+curl -sI https://your-site | grep -i x-powered-by      # nothing in production
+```
+
+The new compose file tags images per version (`<project>-webserver:php83`,
+`<project>-database:mysql84`). The previous `<project>-webserver` and
+`<project>-database` images are no longer used: remove them once the site is
+checked.
+
+**Rollback**: restore `.env` and `docker-compose.yml` from the backups, then
+`docker tag <project>-webserver:pre-migration <project>-webserver` and
+`docker compose up -d --no-deps webserver`.
+
+## Backups
+
+```bash
+./lamp.sh dump                                        # data/db-dumps/<project>-<date>.sql.gz
+make db-restore FILE=data/db-dumps/<dump>.sql.gz      # restore
+```
+
+`dump` is consistent while the site runs and keeps the 7 most recent dumps
+(`DB_DUMP_KEEP`). Schedule it before your file backups pick up the project, for
+example in root's crontab:
+
+```bash
+30 20 * * * cd /path/to/project && ./lamp.sh dump >> /var/log/lampbox-dump.log 2>&1
+```
+
+## Later Security Releases
+
+When PHP publishes a security release, the official images are rebuilt within
+hours. Then, in each project:
+
+```bash
+./lamp.sh update
+```
+
+It pulls the new base image, shows the old and new PHP versions, recreates only
+the webserver and prints the rollback command.

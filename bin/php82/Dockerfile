@@ -1,4 +1,4 @@
-FROM php:8.2.1-apache-buster
+FROM php:8.2-apache-bookworm
 
 # Surpresses debconf complaints of trying to install apt packages interactively
 # https://github.com/moby/moby/issues/4032#issuecomment-192327844
@@ -53,7 +53,6 @@ RUN apt-get update && \
     apt-get -y --no-install-recommends install --fix-missing libmagickwand-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Workarround until imagick is available in pecl with php8 support
 # Imagick Commit to install
 # https://github.com/Imagick/imagick
 ARG IMAGICK_COMMIT="661405abe21d12003207bc8eb0963fafc2c02ee4"
@@ -101,25 +100,31 @@ RUN mkdir -p /etc/apache2/ssl
 RUN a2enmod ssl && a2enmod rewrite
 
 # Enable apache modules
-RUN a2enmod rewrite headers
+# remoteip is only configured in reverse proxy mode (see docker-compose.proxy.yml)
+RUN a2enmod rewrite headers remoteip
 
 ###
 RUN apt-get update && \
     apt-get install -y unzip
 
 # Install phpMyAdmin
-ARG PHPMYADMIN_VERSION=5.2.1
+ARG PHPMYADMIN_VERSION=5.2.3
 RUN wget https://files.phpmyadmin.net/phpMyAdmin/${PHPMYADMIN_VERSION}/phpMyAdmin-${PHPMYADMIN_VERSION}-all-languages.zip -O /tmp/phpmyadmin.zip && \
     unzip /tmp/phpmyadmin.zip -d /opt/ && \
     mv /opt/phpMyAdmin-${PHPMYADMIN_VERSION}-all-languages /opt/phpmyadmin && \
     rm /tmp/phpmyadmin.zip
 
+# Who may reach phpMyAdmin: an Apache 'Require' rule read at container start
+# (override with PHPMYADMIN_REQUIRE in .env, e.g. "ip 203.0.113.10")
+ENV PHPMYADMIN_REQUIRE="all granted"
+
 # Configure Apache for phpMyAdmin avec sh -c pour forcer l'évaluation
+# (\${PHPMYADMIN_REQUIRE} stays literal: Apache resolves it at runtime)
 RUN sh -c 'echo "Alias /${COMPOSE_PROJECT_NAME}-mysql /opt/phpmyadmin\n\
 <Directory /opt/phpmyadmin>\n\
     Options Indexes FollowSymLinks\n\
     AllowOverride None\n\
-    Require all granted\n\
+    Require \${PHPMYADMIN_REQUIRE}\n\
 </Directory>" > /etc/apache2/conf-available/phpmyadmin.conf' && \
     a2enconf phpmyadmin
 

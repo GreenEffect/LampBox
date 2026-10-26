@@ -1,8 +1,12 @@
-# Windows Setup Guide - LampBox v2.2.0
+# Windows Setup Guide - LampBox v3.0.0
 
 ## 🪟 Guide Spécifique Windows
 
-Ce guide vous aide à configurer et utiliser LampBox v2.2.0 sur Windows.
+Ce guide vous aide à configurer et utiliser LampBox v3.0.0 sur Windows.
+
+Windows est pris en charge pour le **développement**, via Git Bash ou WSL2 :
+les scripts (`init.sh`, `lamp.sh`) sont en bash. Ils ne sont pas testés
+systématiquement sous Windows. `init.bat` a été supprimé en 3.0.0.
 
 ---
 
@@ -23,7 +27,7 @@ Ce guide vous aide à configurer et utiliser LampBox v2.2.0 sur Windows.
 
 ### 2. Options pour Exécuter les Scripts
 
-Vous avez **3 options** pour exécuter les scripts bash :
+Vous avez **2 options** pour exécuter les scripts bash :
 
 #### Option A: Git Bash (Recommandé)
 - **Installation:** https://git-scm.com/download/win
@@ -35,16 +39,14 @@ Vous avez **3 options** pour exécuter les scripts bash :
 - **Distribution:** Ubuntu recommandé
 - **Avantages:** Environnement Linux complet
 
-#### Option C: Scripts Natifs Windows (.bat)
-- **Pas d'installation** requise
-- **Limitation:** Seulement pour init.bat
-- **Usage:** Double-clic sur `init.bat`
+Une fois `.env` créé, les commandes `docker compose` fonctionnent aussi depuis
+l'Invite de commandes ou PowerShell (sans les commandes de `lamp.sh`).
 
 ---
 
 ## 🚀 Installation Rapide (Windows)
 
-### Méthode 1: Avec Git Bash (Recommandé)
+Avec Git Bash (ou dans un terminal WSL2) :
 
 ```bash
 # 1. Extraire l'archive (clic droit → Extraire)
@@ -54,26 +56,10 @@ Vous avez **3 options** pour exécuter les scripts bash :
 bash init.sh
 
 # 4. Démarrer
-docker compose up -d
+./lamp.sh start
 
 # 5. Accès
 # http://localhost:8080
-```
-
-### Méthode 2: Sans Git Bash (Scripts Natifs)
-
-```batch
-REM 1. Extraire l'archive
-REM 2. Double-clic sur init.bat
-
-REM 3. Ouvrir Command Prompt dans le dossier
-REM (Shift + Clic droit → "Ouvrir dans le terminal")
-
-REM 4. Démarrer
-docker compose up -d
-
-REM 5. Accès
-REM http://localhost:8080
 ```
 
 ---
@@ -84,10 +70,10 @@ REM http://localhost:8080
 
 ```bash
 # Démarrer
-docker compose up -d
+./lamp.sh start
 
 # Arrêter
-docker compose down
+./lamp.sh stop
 
 # Voir les logs
 docker compose logs -f
@@ -95,11 +81,20 @@ docker compose logs -f
 # Shell dans le conteneur
 docker compose exec webserver bash
 
-# MySQL shell
+# MySQL shell ('mariadb' au lieu de 'mysql' avec MariaDB)
 docker compose exec database mysql -u root -p
 ```
 
 ### Avec Command Prompt / PowerShell
+
+`docker compose` seul ne lit que `docker-compose.yml` : pour le mode proxy, le
+port MySQL ou le mode production, listez les fichiers dans `.env`, séparés par
+`:` comme sous Linux (pas de `;`, qui casserait `lamp.sh`) :
+
+```bash
+COMPOSE_PATH_SEPARATOR=:
+COMPOSE_FILE=docker-compose.yml:docker-compose.production.yml
+```
 
 ```batch
 REM Démarrer
@@ -114,7 +109,7 @@ docker compose logs -f
 REM Shell dans le conteneur
 docker exec -it lamp-webserver bash
 
-REM MySQL shell
+REM MySQL shell ('mariadb' au lieu de 'mysql' avec MariaDB)
 docker exec -it lamp-database mysql -u root -p
 ```
 
@@ -142,7 +137,8 @@ docker exec -it lamp-database mysql -u root -p
 C:\Users\VotreNom\LampBox\
 ├── www\              ← Votre code PHP ici
 ├── config\           ← Configurations
-├── data\mysql\       ← Base de données (ne pas modifier)
+├── data\mysql-<DATABASE>\  ← Base de données (ne pas modifier)
+├── data\db-dumps\    ← Sauvegardes (./lamp.sh dump)
 └── logs\             ← Logs Apache/MySQL
 ```
 
@@ -193,6 +189,10 @@ ipconfig /flushdns
 
 En mode reverse proxy, le certificat TLS est **partagé** par tous les projets et
 utilisé par Traefik. Il est stocké dans `traefik/certs/`.
+
+En accès direct par les ports, le HTTPS (`https://localhost:8443`) s'active dès
+qu'un certificat existe dans `config/ssl` : `./generate-ssl-certs.sh localhost`
+puis `./lamp.sh restart`.
 
 ### Avec Git Bash
 
@@ -322,21 +322,20 @@ Installer **Windows Terminal** depuis le Microsoft Store:
 
 Installer les extensions VS Code:
 - **Docker** (Microsoft)
-- **Remote - Containers** (Microsoft)
+- **Dev Containers** (Microsoft, anciennement "Remote - Containers")
 - **PHP Intelephense** (pour PHP)
 
 ### 4. Chemins de fichiers
 
-Sur Windows, utilisez:
-- `\` pour les chemins Windows natifs
-- `/` dans les chemins Docker (containers)
+Dans `.env`, utilisez toujours `/`, y compris pour les chemins de l'hôte :
+Docker Compose les accepte sous Windows, alors que `lamp.sh` lit `.env` avec
+bash, qui supprime les `\` (`.\www` y devient `.www`).
 
-Exemple dans .env:
 ```bash
-# Windows natif (rarement nécessaire)
-DOCUMENT_ROOT=.\www
+# Chemin sur l'hôte (Windows compris)
+DOCUMENT_ROOT=./www
 
-# Docker (déjà correct)
+# Chemin dans le conteneur
 APACHE_DOCUMENT_ROOT=/var/www/html
 ```
 
@@ -350,7 +349,8 @@ APACHE_DOCUMENT_ROOT=/var/www/html
 REM Redémarrer Docker
 REM Clic droit sur l'icône Docker → Restart
 
-REM Nettoyer Docker
+REM Nettoyer Docker (attention : supprime aussi les images de retour arrière
+REM <projet>-webserver:<version>-pre-update et celles des projets arrêtés)
 docker system prune -a
 
 REM Voir les conteneurs
@@ -402,8 +402,8 @@ netstat -an | findstr LISTENING
 - [ ] Docker Desktop installé et en cours d'exécution
 - [ ] Git Bash installé (ou WSL2)
 - [ ] Archive extraite dans un dossier accessible
-- [ ] `.env` configuré (via init.bat ou init.sh)
-- [ ] Docker compose lancé (`docker compose up -d`)
+- [ ] `.env` configuré (via `init.sh` dans Git Bash ou WSL2)
+- [ ] Stack lancé (`./lamp.sh start`)
 - [ ] Site accessible (`http://localhost:8080`)
 - [ ] phpMyAdmin accessible (`http://localhost:8080/lamp-mysql`)
 

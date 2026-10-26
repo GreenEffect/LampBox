@@ -16,6 +16,9 @@ services:
     # '!reset []' truly clears the base 'ports' list (a plain '[]' would be
     # concatenated/ignored by Compose's merge and leave the ports in place).
     ports: !reset []
+    volumes:
+      # Use the client IP sent by Traefik (logs, IP rules such as PHPMYADMIN_REQUIRE)
+      - ./config/apache/remoteip.conf:/etc/apache2/conf-enabled/remoteip.conf:ro
     networks:
       - internal
       - lampbox_web
