@@ -1,6 +1,6 @@
 # Changelog - LampBox
 
-### 3.0.0 - 2026-10-23
+### 3.0.0 - 2026-10-26
 Lessons from the PHP2Shell security release (CVE-2026-109618 / CVE-2026-109619).
 Major version: end-of-life PHP and database versions and `init.bat` are removed. For a site created with an older LampBox, start from a fresh 3.0 copy and move the site into it (`docs/MIGRATION.md`); updating the old project in place is not recommended
 

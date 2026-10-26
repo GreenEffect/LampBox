@@ -436,7 +436,7 @@ site into it (updating the old project in place is not recommended), see the
 
 ## 🆚 What's New in v3.0.0
 
-### Version 3.0.0 (2026-10-23)
+### Version 3.0.0 (2026-10-26)
 - ✅ **Production mode** (`LAMPBOX_ENV=production`): PHP errors hidden, Xdebug off, no `X-Powered-By`, phpMyAdmin denied by default
 - ✅ phpMyAdmin access configurable (`PHPMYADMIN_REQUIRE`), root login disabled, real client IP behind Traefik
 - ✅ New `./lamp.sh update`: apply a PHP security release to the webserver only, with rollback image
